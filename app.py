@@ -4,7 +4,7 @@ import streamlit as st
 # Set page configuration
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="centered")
 
-# Initialize session state variables
+# --- INITIALIZE ALL SESSION STATE VARIABLES ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -13,6 +13,8 @@ if "allowed_users" not in st.session_state:
     st.session_state.allowed_users = ["Calvin", "Austin", "George", "Isaac", "Isaiah", "Fox", "Chris", "Leo", "Carson", "Soren", "Edward", "Pranav"]
 if "theme_color" not in st.session_state:
     st.session_state.theme_color = "Default"
+if "text_color" not in st.session_state:
+    st.session_state.text_color = "#31333F"  # Default Streamlit near-black color
 if "secret_number" not in st.session_state:
     st.session_state.secret_number = random.randint(1, 100)
 if "guess_tries" not in st.session_state:
@@ -20,36 +22,62 @@ if "guess_tries" not in st.session_state:
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
 
-# --- LOGIN SCREEN ---
+# --- LOGIN SCREEN CONTROLS ---
 if not st.session_state.logged_in:
     st.title("🤪 Goofy Gang Portal")
     st.subheader("Please Login")
     
+    # Text input configuration for user mapping
     user_input = st.text_input("Enter your name:", placeholder="Type your name here...")
+    password_input = st.text_input("Enter Portal Password:", type="password", placeholder="Enter secret password...")
     
     if st.button("Login", use_container_width=True):
-        if user_input.strip() in st.session_state.allowed_users:
+        cleaned_name = user_input.strip()
+        # Checks if name matches list and password is correct (Adjust "goofy123" to your preferred password text)
+        if cleaned_name in st.session_state.allowed_users and password_input == "goofy123":
             st.session_state.logged_in = True
-            st.session_state.username = user_input.strip()
+            st.session_state.username = cleaned_name
+            st.success("Access Granted!")
             st.rerun()
-        else:
+        elif cleaned_name not in st.session_state.allowed_users:
             st.error("Name not found in the Goofy Gang list. Please try again!")
+        else:
+            st.error("Incorrect password! Hint: Check with the group.")
 
-# --- MAIN PORTAL AREA ---
+# --- MAIN PORTAL INTERFACE ---
 else:
-    # Sidebar header and logout options
+    # --- SIDEBAR CONTROL PANEL ---
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
-    # Restored theme selector functionality
-    st.session_state.theme_color = st.sidebar.selectbox("Choose Theme Color:", ["Default", "Blue", "Green", "Dark"])
+    # Layout and Text Customization tools
+    st.sidebar.subheader("🎨 Customization")
+    st.session_state.theme_color = st.sidebar.selectbox("Choose Background Theme:", ["Default", "Light", "Dark"])
     
-    if st.sidebar.button("Logout"):
+    # Dynamic Custom Color Selector Widget
+    chosen_text_color = st.sidebar.color_picker("Pick App Text Color:", st.session_state.text_color)
+    st.session_state.text_color = chosen_text_color
+    
+    # HTML injection to apply color properties globally onto markdown texts
+    st.markdown(
+        f"""
+        <style>
+        .stApp, .stMarkdown p, h1, h2, h3, span {{
+            color: {st.session_state.text_color} !important;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    # App Session Kill Switch
+    if st.sidebar.button("Logout", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.username = ""
         st.rerun()
         
+    # --- DASHBOARD COMPONENT RENDER ---
     st.title("🎉 Goofy Gang Dashboard")
-    st.write(f"Welcome back to the portal dashboard, **{st.session_state.username}**!")
+    st.write(f"Logged in session verified for user: **{st.session_state.username}**")
     
     # --- GAME SECTION (TOP) ---
     st.header("🎲 Secret Number Game")
@@ -83,7 +111,7 @@ else:
     st.header("💬 Goofy Chat Box")
     st.write("Leave a message for the gang below!")
     
-    # Message history window
+    # Message logs window structure
     chat_container = st.container(height=300)
     with chat_container:
         if not st.session_state.chat_messages:
@@ -92,7 +120,7 @@ else:
             with st.chat_message("user"):
                 st.write(f"**{msg['user']}**: {msg['text']}")
 
-    # Chat entry form input
+    # Active chat field
     if prompt := st.chat_input("Type a message to the group..."):
         st.session_state.chat_messages.append({
             "user": st.session_state.username,
