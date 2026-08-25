@@ -1,103 +1,106 @@
-import random
 import streamlit as st
+import requests
 
 # Set page configuration
-st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="centered")
+st.set_page_config(page_title="Streamlit Pokédex & Chat", page_icon="🔴", layout="wide")
 
-# Initialize session state variables
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
-if "allowed_users" not in st.session_state:
-    st.session_state.allowed_users = ["Calvin", "Austin", "George", "Isaac", "Isaiah", "Fox", "Chris", "Leo", "Carson", "Soren", "Edward", "Pranav"]
-if "theme_color" not in st.session_state:
-    st.session_state.theme_color = "Default"
-if "secret_number" not in st.session_state:
-    st.session_state.secret_number = random.randint(1, 100)
-if "guess_tries" not in st.session_state:
-    st.session_state.guess_tries = 10
-
-# NEW: Initialize chat history state
+# Initialize chat history session state
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
 
-# --- LOGIN SCREEN ---
-if not st.session_state.logged_in:
-    st.title("🤪 Goofy Gang Portal")
-    st.subheader("Please Login")
-    
-    user_input = st.text_input("Enter your name:", placeholder="Type your name here...")
-    
-    if st.button("Login", use_container_width=True):
-        if user_input.strip() in st.session_state.allowed_users:
-            st.session_state.logged_in = True
-            st.session_state.username = user_input.strip()
-            st.rerun()
-        else:
-            st.error("Name not found in the Goofy Gang list. Please try again!")
+# --- POKÉDEX LOGIC FUNCTIONS ---
+@st.cache_data(show_spinner=False)
+def fetch_pokemon_data(name_or_id):
+    try:
+        url = f"https://pokeapi.co{str(name_or_id).lower().strip()}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.json()
+    except Exception:
+        return None
+    return None
 
-# --- MAIN PORTAL AREA ---
-else:
-    # Sidebar header and logout options
-    st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
-    if st.sidebar.button("Logout"):
-        st.session_state.logged_in = False
-        st.session_state.username = ""
-        st.rerun()
-        
-    st.title("🎉 Goofy Gang Dashboard")
-    
-    # Create tabs to organize features neatly
-    tab1, tab2 = st.tabs(["💬 Goofy Chatbox", "🎲 Guessing Game"])
-    
-    # TAB 1: Chatbox Feature
-    with tab1:
-        st.header("💬 Goofy Chat Box")
-        st.write("Leave a message for the gang!")
-        
-        # Display existing messages inside a container
-        chat_container = st.container(height=300)
-        with chat_container:
-            if not st.session_state.chat_messages:
-                st.info("No messages yet. Be the first to say hello!")
-            for msg in st.session_state.chat_messages:
-                with st.chat_message(msg["role"]):
-                    st.write(f"**{msg['user']}**: {msg['text']}")
-                    
-        # Chat input element
-        if prompt := st.chat_input("Type a message to the group..."):
-            # Save message to session state
-            st.session_state.chat_messages.append({
-                "role": "user",
-                "user": st.session_state.username,
-                "text": prompt
-            })
-            st.rerun()
+@st.cache_data(show_spinner=False)
+def get_pokemon_list(limit=151):
+    try:
+        url = f"https://pokeapi.co{limit}"
+        response = requests.get(url)
+        if response.status_code == 200:
+            return [p['name'].title() for p in response.json()['results']]
+    except Exception:
+        pass
+    return ["Pikachu"]
 
-    # TAB 2: Number Guessing Game 
-    with tab2:
-        st.header("🎲 Secret Number Game")
-        st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
-        
-        if st.session_state.guess_tries > 0:
-            guess = st.number_input("Enter your guess:", min_value=1, max_value=100, step=1, key="game_guess")
-            
-            if st.button("Submit Guess"):
-                st.session_state.guess_tries -= 1
-                if guess == st.session_state.secret_number:
-                    st.success(f"🥳 Awesome job! You guessed the secret number {st.session_state.secret_number}!")
-                    if st.button("Play Again"):
-                        st.session_state.secret_number = random.randint(1, 100)
-                        st.session_state.guess_tries = 10
-                        st.rerun()
-                elif guess < st.session_state.secret_number:
-                    st.warning("Too low! Try a higher number.")
+# --- APP HEADER ---
+st.title("🔴 Streamlit Pokédex Portal")
+st.write("Browse your favorite Pokémon and chat with the Goofy Gang dashboard.")
+
+# --- SIDEBAR: SEARCH & NAVIGATION ---
+st.sidebar.header("🔍 Search & Filter")
+pokemon_list = get_pokemon_list()
+selected_pokemon = st.sidebar.selectbox("Choose a Pokémon:", pokemon_list)
+search_query = st.sidebar.text_input("Or type name/ID manually:")
+
+lookup_target = search_query if search_query else selected_pokemon
+
+# --- MAIN SECTION: POKÉDEX APPLICATION ---
+if lookup_target:
+    with st.spinner(f"Fetching data for {lookup_target}..."):
+        data = fetch_pokemon_data(lookup_target)
+        if data:
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                image_url = data['sprites']['other']['official-artwork']['front_default']
+                if image_url:
+                    st.image(image_url, use_column_width=True)
                 else:
-                    st.warning("Too high! Try a lower number.")
+                    st.image(data['sprites']['front_default'], use_column_width=True)
+                st.metric(label="Pokédex ID", value=f"#{data['id']:03d}")
+                
+            with col2:
+                st.header(data['name'].title())
+                types = [t['type']['name'].title() for t in data['types']]
+                st.subheader("Type")
+                st.write(" | ".join(types))
+                
+                col_weight, col_height = st.columns(2)
+                with col_weight:
+                    st.metric(label="Weight", value=f"{data['weight'] / 10} kg")
+                with col_height:
+                    st.metric(label="Height", value=f"{data['height'] / 10} m")
+                    
+                st.subheader("Base Stats")
+                stats_dict = {s['stat']['name'].replace('-', ' ').title(): s['base_stat'] for s in data['stats']}
+                for stat_name, stat_value in stats_dict.items():
+                    st.write(f"**{stat_name}**: {stat_value}")
+                    st.progress(min(stat_value / 255.0, 1.0))
+                    
+                st.subheader("Abilities")
+                abilities = [a['ability']['name'].replace('-', ' ').title() for a in data['abilities']]
+                st.write(", ".join(abilities))
         else:
-            st.error(f"💥 Game Over! The correct number was {st.session_state.secret_number}.")
-            if st.button("Reset Game"):
-                st.session_state.secret_number = random.randint(1, 100)
-                st.session_state.guess_tries = 10
-                st.rerun()
+            st.error(f"Could not find Pokémon: '{lookup_target}'. Please check the spelling or ID.")
+
+st.divider()
+
+# --- BOTTOM SECTION: INTEGRATED CHATBOX ---
+st.header("💬 Goofy Chat Box")
+st.write("Leave a message for the gang right below the tool!")
+
+# Display message history log
+chat_container = st.container(height=250)
+with chat_container:
+    if not st.session_state.chat_messages:
+        st.info("No messages yet. Be the first to say hello!")
+    for msg in st.session_state.chat_messages:
+        with st.chat_message(msg["role"]):
+            st.write(f"**{msg['user']}**: {msg['text']}")
+
+# Live message input box
+if prompt := st.chat_input("Type a message to the group..."):
+    st.session_state.chat_messages.append({
+        "role": "user",
+        "user": "Pranav",
+        "text": prompt
+    })
+    st.rerun()
