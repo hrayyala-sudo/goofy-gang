@@ -16,16 +16,14 @@ if "username" not in st.session_state:
 if "allowed_users" not in st.session_state:
     st.session_state.allowed_users = ["Calvin", "Austin", "George", "Isaac", "Isaiah", "Fox", "Chris", "Leo", "Carson", "Soren", "Edward", "Pranav"]
 if "text_color" not in st.session_state:
-    st.session_state.text_color = "#FFFFFF"  # Changed default to bright white for high contrast
+    st.session_state.text_color = "#111111"  # Default to crisp dark text
 
 # --- GAME SESSION STATES ---
-# Secret Number Game
 if "secret_number" not in st.session_state:
     st.session_state.secret_number = random.randint(1, 100)
 if "guess_tries" not in st.session_state:
     st.session_state.guess_tries = 10
 
-# Tic-Tac-Toe
 if "ttt_board" not in st.session_state:
     st.session_state.ttt_board = [" "] * 9
 if "ttt_turn" not in st.session_state:
@@ -33,7 +31,6 @@ if "ttt_turn" not in st.session_state:
 if "ttt_winner" not in st.session_state:
     st.session_state.ttt_winner = None
 
-# Rock Paper Scissors Trackers
 if "rps_user_score" not in st.session_state:
     st.session_state.rps_user_score = 0
 if "rps_ai_score" not in st.session_state:
@@ -42,34 +39,38 @@ if "rps_ai_score" not in st.session_state:
 
 # --- TIC-TAC-TOE HELPERS ---
 def check_ttt_winner(b):
-    # Checking Rows
     if b[0] == b[1] == b[2] != " ": return b[0]
     if b[3] == b[4] == b[5] != " ": return b[3]
     if b[6] == b[7] == b[8] != " ": return b[6]
-    # Checking Columns
     if b[0] == b[3] == b[6] != " ": return b[0]
     if b[1] == b[4] == b[7] != " ": return b[1]
     if b[2] == b[5] == b[8] != " ": return b[2]
-    # Checking Diagonals
     if b[0] == b[4] == b[8] != " ": return b[0]
     if b[2] == b[4] == b[6] != " ": return b[2]
-    # Checking for Tie
-    if " " not in b:
-        return "Tie"
+    if " " not in b: return "Tie"
     return None
 
 
-# --- GLOBAL VISIBILITY STYLING ---
-# This forces the login page text to be white immediately so you can read it easily
+# --- FORCE WHITE BACKGROUND & DARK TEXT STYLING ---
 st.markdown(
     f"""
     <style>
+    /* Force main app area background to white */
+    .stApp {{
+        background-color: #FFFFFF !important;
+    }}
+    /* Force sidebar panel background to light gray for contrast */
+    [data-testid="stSidebar"] {{
+        background-color: #F8F9FA !important;
+    }}
+    /* Force all app text labels to stay dark black/gray */
     .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {{
         color: {st.session_state.text_color} !important;
     }}
-    /* Make text inside input fields dark so it is readable against white boxes */
+    /* Keep input fields clear and legible */
     input {{
         color: #111111 !important;
+        background-color: #FFFFFF !important;
     }}
     </style>
     """,
@@ -119,7 +120,7 @@ else:
         ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors"]
     )
     
-    # Calvin's Admin setup updates the state password instantly
+    # Calvin's Admin setup
     if st.session_state.username == "Calvin":
         st.sidebar.markdown("---")
         st.sidebar.subheader("🔑 Admin Settings")
@@ -234,4 +235,3 @@ else:
             elif (user_choice == "Rock" and ai_choice == "Scissors") or \
                  (user_choice == "Paper" and ai_choice == "Rock") or \
                  (user_choice == "Scissors" and ai_choice == "Paper"):
-                st.success("🔥 You win this round!")
