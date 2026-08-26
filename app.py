@@ -22,19 +22,22 @@ if "guess_tries" not in st.session_state:
 if "chat_messages" not in st.session_state:
     st.session_state.chat_messages = []
 
+# NEW: Track the current master password across all users
+if "master_password" not in st.session_state:
+    st.session_state.master_password = "goofy123"
+
 # --- LOGIN SCREEN CONTROLS ---
 if not st.session_state.logged_in:
     st.title("🤪 Goofy Gang Portal")
     st.subheader("Please Login")
     
-    # Text input configuration for user mapping
     user_input = st.text_input("Enter your name:", placeholder="Type your name here...")
     password_input = st.text_input("Enter Portal Password:", type="password", placeholder="Enter secret password...")
     
     if st.button("Login", use_container_width=True):
         cleaned_name = user_input.strip()
-        # Checks if name matches list and password is correct (Adjust "goofy123" to your preferred password text)
-        if cleaned_name in st.session_state.allowed_users and password_input == "goofy123":
+        # Authenticates using the dynamically managed password state
+        if cleaned_name in st.session_state.allowed_users and password_input == st.session_state.master_password:
             st.session_state.logged_in = True
             st.session_state.username = cleaned_name
             st.success("Access Granted!")
@@ -49,15 +52,22 @@ else:
     # --- SIDEBAR CONTROL PANEL ---
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
-    # Layout and Text Customization tools
+    # NEW: Admin Access Control Module exclusively for Calvin
+    if st.session_state.username == "Calvin":
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("🔑 Admin Settings")
+        new_pwd = st.sidebar.text_input("Change App Password:", value=st.session_state.master_password, type="password")
+        if st.sidebar.button("Update Password", use_container_width=True):
+            st.session_state.master_password = new_pwd
+            st.sidebar.success("Password updated!")
+    
+    st.sidebar.markdown("---")
     st.sidebar.subheader("🎨 Customization")
     st.session_state.theme_color = st.sidebar.selectbox("Choose Background Theme:", ["Default", "Light", "Dark"])
     
-    # Dynamic Custom Color Selector Widget
     chosen_text_color = st.sidebar.color_picker("Pick App Text Color:", st.session_state.text_color)
     st.session_state.text_color = chosen_text_color
     
-    # HTML injection to apply color properties globally onto markdown texts (Fixed double braces)
     st.markdown(
         f"""
         <style>
@@ -69,7 +79,6 @@ else:
         unsafe_allow_html=True
     )
     
-    # App Session Kill Switch
     if st.sidebar.button("Logout", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.username = ""
@@ -111,7 +120,6 @@ else:
     st.header("💬 Goofy Chat Box")
     st.write("Leave a message for the gang below!")
     
-    # Message logs window structure
     chat_container = st.container(height=300)
     with chat_container:
         if not st.session_state.chat_messages:
@@ -120,7 +128,6 @@ else:
             with st.chat_message("user"):
                 st.write(f"**{msg['user']}**: {msg['text']}")
 
-    # Active chat field
     if prompt := st.chat_input("Type a message to the group..."):
         st.session_state.chat_messages.append({
             "user": st.session_state.username,
