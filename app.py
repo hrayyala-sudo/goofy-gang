@@ -46,6 +46,14 @@ if not st.session_state.logged_in:
 else:
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
+    # NEW: Sidebar Clickable Dot Navigation
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("📍 Navigation Pages")
+    page_selection = st.sidebar.radio(
+        "Go to page:",
+        ["💬 Goofy Chatbox", "🎲 Guessing Game"]
+    )
+    
     # Calvin's Admin setup updates the state password instantly
     if st.session_state.username == "Calvin":
         st.sidebar.markdown("---")
@@ -79,15 +87,12 @@ else:
         
     st.title("🎉 Goofy Gang Dashboard")
     
-    # Restored Multi-tab navigation layout style
-    tab1, tab2 = st.tabs(["💬 Goofy Chatbox", "🎲 Guessing Game"])
-    
-    # --- TAB 1: INTEGRATED CHATBOX ---
-    with tab1:
+    # --- RENDER THE PAGE CHOSEN VIA SIDEBAR DOTS ---
+    if page_selection == "💬 Goofy Chatbox":
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
         
-        chat_container = st.container(height=300)
+        chat_container = st.container(height=350)
         with chat_container:
             if not st.session_state.chat_messages:
                 st.info("No messages saved yet. Type below to start the conversation!")
@@ -99,8 +104,7 @@ else:
             st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
             st.rerun()
 
-    # --- TAB 2: SECRET NUMBER GAME ---
-    with tab2:
+    elif page_selection == "🎲 Guessing Game":
         st.header("🎲 Secret Number Game")
         st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
         
