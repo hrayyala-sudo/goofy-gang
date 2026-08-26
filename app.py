@@ -16,7 +16,7 @@ if "username" not in st.session_state:
 if "allowed_users" not in st.session_state:
     st.session_state.allowed_users = ["Calvin", "Austin", "George", "Isaac", "Isaiah", "Fox", "Chris", "Leo", "Carson", "Soren", "Edward", "Pranav"]
 if "text_color" not in st.session_state:
-    st.session_state.text_color = "#31333F"
+    st.session_state.text_color = "#FFFFFF"  # Changed default to bright white for high contrast
 
 # --- GAME SESSION STATES ---
 # Secret Number Game
@@ -40,7 +40,7 @@ if "rps_ai_score" not in st.session_state:
     st.session_state.rps_ai_score = 0
 
 
-# --- GLITCH-PROOF TIC-TAC-TOE HELPERS ---
+# --- TIC-TAC-TOE HELPERS ---
 def check_ttt_winner(b):
     # Checking Rows
     if b[0] == b[1] == b[2] != " ": return b[0]
@@ -57,6 +57,24 @@ def check_ttt_winner(b):
     if " " not in b:
         return "Tie"
     return None
+
+
+# --- GLOBAL VISIBILITY STYLING ---
+# This forces the login page text to be white immediately so you can read it easily
+st.markdown(
+    f"""
+    <style>
+    .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {{
+        color: {st.session_state.text_color} !important;
+    }}
+    /* Make text inside input fields dark so it is readable against white boxes */
+    input {{
+        color: #111111 !important;
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 
 # --- LOGIN SCREEN ---
@@ -116,17 +134,6 @@ else:
     chosen_text_color = st.sidebar.color_picker("Pick App Text Color:", st.session_state.text_color)
     st.session_state.text_color = chosen_text_color
     
-    st.markdown(
-        f"""
-        <style>
-        .stApp, .stMarkdown p, h1, h2, h3, span, label {{
-            color: {st.session_state.text_color} !important;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-    
     if st.sidebar.button("Logout", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.username = ""
@@ -180,14 +187,12 @@ else:
         st.header("❌ Tic-Tac-Toe")
         st.write(f"Current Turn: **{st.session_state.ttt_turn}**")
         
-        # Display the grid using 3 layout columns
         for row in range(3):
             cols = st.columns(3)
             for col in range(3):
                 idx = row * 3 + col
                 button_label = st.session_state.ttt_board[idx]
                 
-                # Make empty cells clickable, otherwise show letter
                 if button_label == " " and st.session_state.ttt_winner is None:
                     if cols[col].button(" ", key=f"ttt_{idx}", use_container_width=True):
                         st.session_state.ttt_board[idx] = st.session_state.ttt_turn
@@ -230,8 +235,3 @@ else:
                  (user_choice == "Paper" and ai_choice == "Rock") or \
                  (user_choice == "Scissors" and ai_choice == "Paper"):
                 st.success("🔥 You win this round!")
-                st.session_state.rps_user_score += 1
-            else:
-                st.error("💀 AI wins this round!")
-                st.session_state.rps_ai_score += 1
-                
