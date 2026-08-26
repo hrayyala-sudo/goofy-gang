@@ -40,14 +40,21 @@ if "rps_ai_score" not in st.session_state:
     st.session_state.rps_ai_score = 0
 
 
-# --- TIC-TAC-TOE HELPERS ---
-def check_ttt_winner(board):
-    win_combinations = [, [3, 4, 5], [6, 7, 8],  # Rows, [1, 4, 7], [2, 5, 8],  # Columns, [2, 4, 6]              # Diagonals
-    ]
-    for combo in win_combinations:
-        if board[combo[0]] == board[combo[1]] == board[combo[2]] != " ":
-            return board[combo[0]]
-    if " " not in board:
+# --- GLITCH-PROOF TIC-TAC-TOE HELPERS ---
+def check_ttt_winner(b):
+    # Checking Rows
+    if b[0] == b[1] == b[2] != " ": return b[0]
+    if b[3] == b[4] == b[5] != " ": return b[3]
+    if b[6] == b[7] == b[8] != " ": return b[6]
+    # Checking Columns
+    if b[0] == b[3] == b[6] != " ": return b[0]
+    if b[1] == b[4] == b[7] != " ": return b[1]
+    if b[2] == b[5] == b[8] != " ": return b[2]
+    # Checking Diagonals
+    if b[0] == b[4] == b[8] != " ": return b[0]
+    if b[2] == b[4] == b[6] != " ": return b[2]
+    # Checking for Tie
+    if " " not in b:
         return "Tie"
     return None
 
@@ -228,6 +235,3 @@ else:
                 st.error("💀 AI wins this round!")
                 st.session_state.rps_ai_score += 1
                 
-        if st.button("Reset Scoreboard"):
-            st.session_state.rps_user_score = 0
-            st.session_state.rps_ai_score = 0
