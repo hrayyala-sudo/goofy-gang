@@ -42,7 +42,7 @@ if "rps_ai_score" not in st.session_state:
 
 # --- TIC-TAC-TOE HELPERS ---
 def check_ttt_winner(board):
-    win_combinations = [, [3, 4, 5], [6, 7, 8],  # Rows, [1, 4, 7], [2, 5, 8],  # Columns, [2, 4, 6]             # Diagonals
+    win_combinations = [, [3, 4, 5], [6, 7, 8],  # Rows, [1, 4, 7], [2, 5, 8],  # Columns, [2, 4, 6]              # Diagonals
     ]
     for combo in win_combinations:
         if board[combo[0]] == board[combo[1]] == board[combo[2]] != " ":
@@ -77,7 +77,7 @@ else:
     # --- SIDEBAR CONTROL PANEL ---
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
-    # NEW FEATURE: Username Change Option
+    # Username Change Option
     st.sidebar.subheader("👤 Profile Settings")
     new_username_input = st.sidebar.text_input("Change Nickname:", value=st.session_state.username)
     if st.sidebar.button("Save New Nickname", use_container_width=True):
@@ -168,7 +168,7 @@ else:
                 st.session_state.guess_tries = 10
                 st.rerun()
 
-    # NEW PAGE 3: TIC-TAC-TOE
+    # PAGE 3: TIC-TAC-TOE
     elif page_selection == "❌ Tic-Tac-Toe":
         st.header("❌ Tic-Tac-Toe")
         st.write(f"Current Turn: **{st.session_state.ttt_turn}**")
@@ -205,7 +205,7 @@ else:
                 st.session_state.ttt_winner = None
                 st.rerun()
 
-    # NEW PAGE 4: ROCK PAPER SCISSORS
+    # PAGE 4: ROCK PAPER SCISSORS
     elif page_selection == "🪨 Rock Paper Scissors":
         st.header("🪨 Rock Paper Scissors")
         st.write(f"🏆 Scoreboard — **You**: {st.session_state.rps_user_score} | **AI Bot**: {st.session_state.rps_ai_score}")
@@ -230,3 +230,4 @@ else:
                 
         if st.button("Reset Scoreboard"):
             st.session_state.rps_user_score = 0
+            st.session_state.rps_ai_score = 0
