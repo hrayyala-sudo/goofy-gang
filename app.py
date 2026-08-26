@@ -232,6 +232,7 @@ else:
             
             if user_choice == ai_choice:
                 st.warning("👔 It's a tie match!")
-            elif (user_choice == "Rock" and ai_choice == "Scissors") or \
-                 (user_choice == "Paper" and ai_choice == "Rock") or \
-                 (user_choice == "Scissors" and ai_choice == "Paper"):
+            elif user_choice == "Rock" and ai_choice == "Scissors":
+                st.success("🔥 You win this round!")
+                st.session_state.rps_user_score += 1
+            elif user_choice == "Paper" and ai_choice == "Rock":
