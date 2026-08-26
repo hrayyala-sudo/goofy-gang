@@ -1,40 +1,14 @@
 import random
 import streamlit as st
-import os
 
 # Set page configuration
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="centered")
 
-# --- FILES TO SAVE DATA PERMANENTLY ---
-PASSWORD_FILE = "saved_password.txt"
-CHAT_FILE = "saved_chat.txt"
-
-# Helper functions to read/write files locally in the cloud directory
-def load_saved_password():
-    if os.path.exists(PASSWORD_FILE):
-        with open(PASSWORD_FILE, "r") as f:
-            return f.read().strip()
-    return "goofy123"  # Default password if file doesn't exist yet
-
-def save_new_password(new_pwd):
-    with open(PASSWORD_FILE, "w") as f:
-        f.write(new_pwd.strip())
-
-def load_saved_chat():
-    messages = []
-    if os.path.exists(CHAT_FILE):
-        with open(CHAT_FILE, "r", encoding="utf-8") as f:
-            for line in f:
-                if "|||" in line:
-                    user, text = line.strip().split("|||", 1)
-                    messages.append({"user": user, "text": text})
-    return messages
-
-def append_saved_chat(user, text):
-    with open(CHAT_FILE, "a", encoding="utf-8") as f:
-        f.write(f"{user}|||{text}\n")
-
-# --- INITIALIZE RUNTIME VARIABLES ---
+# --- DEFINE CENTRAL STORAGE STRUCTURES (ERROR-FREE CACHING) ---
+if "master_password" not in st.session_state:
+    st.session_state.master_password = "goofy123"
+if "chat_messages" not in st.session_state:
+    st.session_state.chat_messages = []
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -48,9 +22,6 @@ if "secret_number" not in st.session_state:
 if "guess_tries" not in st.session_state:
     st.session_state.guess_tries = 10
 
-# Load values from persistent files
-master_password = load_saved_password()
-
 # --- LOGIN SCREEN ---
 if not st.session_state.logged_in:
     st.title("🤪 Goofy Gang Portal")
@@ -61,7 +32,7 @@ if not st.session_state.logged_in:
     
     if st.button("Login", use_container_width=True):
         cleaned_name = user_input.strip()
-        if cleaned_name in st.session_state.allowed_users and password_input == master_password:
+        if cleaned_name in st.session_state.allowed_users and password_input == st.session_state.master_password:
             st.session_state.logged_in = True
             st.session_state.username = cleaned_name
             st.success("Access Granted!")
@@ -75,14 +46,14 @@ if not st.session_state.logged_in:
 else:
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
-    # Calvin's Admin tool updates the password file instantly
+    # Calvin's Admin setup updates the state password instantly
     if st.session_state.username == "Calvin":
         st.sidebar.markdown("---")
         st.sidebar.subheader("🔑 Admin Settings")
-        new_pwd = st.sidebar.text_input("Change Global App Password:", value=master_password, type="password")
+        new_pwd = st.sidebar.text_input("Change Global App Password:", value=st.session_state.master_password, type="password")
         if st.sidebar.button("Update Permanent Password", use_container_width=True):
-            save_new_password(new_pwd)
-            st.sidebar.success("Password updated permanently!")
+            st.session_state.master_password = new_pwd
+            st.sidebar.success("Password updated!")
             st.rerun()
     
     st.sidebar.markdown("---")
@@ -108,27 +79,24 @@ else:
         
     st.title("🎉 Goofy Gang Dashboard")
     
-    # RESTORED: Multi-tab navigation layout
+    # Restored Multi-tab navigation layout style
     tab1, tab2 = st.tabs(["💬 Goofy Chatbox", "🎲 Guessing Game"])
     
-    # --- TAB 1: PERSISTENT CHATBOX ---
+    # --- TAB 1: INTEGRATED CHATBOX ---
     with tab1:
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
         
-        # Load messages directly from the local file storage
-        live_messages = load_saved_chat()
-        
         chat_container = st.container(height=300)
         with chat_container:
-            if not live_messages:
+            if not st.session_state.chat_messages:
                 st.info("No messages saved yet. Type below to start the conversation!")
-            for msg in live_messages:
+            for msg in st.session_state.chat_messages:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
 
         if prompt := st.chat_input("Type a message to the group..."):
-            append_saved_chat(st.session_state.username, prompt)
+            st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
             st.rerun()
 
     # --- TAB 2: SECRET NUMBER GAME ---
@@ -147,7 +115,7 @@ else:
                 else:
                     st.warning("Too high!")
         else:
-            st.error(f"💥 Game Over! The number was {st.session_state.secret_number}.")
+            st.error(f"💥 Game Over! The correct number was {st.session_state.secret_number}.")
             if st.button("Reset Game", use_container_width=True):
                 st.session_state.secret_number = random.randint(1, 100)
                 st.session_state.guess_tries = 10
