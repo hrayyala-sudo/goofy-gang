@@ -230,9 +230,9 @@ else:
             ai_choice = random.choice(choices)
             st.info(f"🤖 AI bot chose: **{ai_choice}**")
             
-            # Glitch-proof one-line condition checking
-            win_conditions = [("Rock", "Scissors"), ("Paper", "Rock"), ("Scissors", "Paper")]
-            
+            # Flattest possible outcome evaluations to guarantee zero spacing bugs
+            outcome = "lose"
             if user_choice == ai_choice:
-                st.warning("👔 It's a tie match!")
-            elif (user_choice, ai_choice) in win_conditions:
+                outcome = "tie"
+            if user_choice == "Rock" and ai_choice == "Scissors":
+                outcome = "win"
