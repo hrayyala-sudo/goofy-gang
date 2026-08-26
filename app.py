@@ -107,45 +107,48 @@ else:
         st.rerun()
         
     st.title("🎉 Goofy Gang Dashboard")
-    st.write(f"Session authenticated for: **{st.session_state.username}**")
     
-    # --- GAME SECTION ---
-    st.header("🎲 Secret Number Game")
-    st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
+    # RESTORED: Multi-tab navigation layout
+    tab1, tab2 = st.tabs(["💬 Goofy Chatbox", "🎲 Guessing Game"])
     
-    if st.session_state.guess_tries > 0:
-        guess = st.number_input("Enter your guess:", min_value=1, max_value=100, step=1, key="game_guess")
-        if st.button("Submit Guess", use_container_width=True):
-            st.session_state.guess_tries -= 1
-            if guess == st.session_state.secret_number:
-                st.success(f"🥳 Awesome job! The number was {st.session_state.secret_number}!")
-            elif guess < st.session_state.secret_number:
-                st.warning("Too low!")
-            else:
-                st.warning("Too high!")
-    else:
-        st.error(f"💥 Game Over! The number was {st.session_state.secret_number}.")
-        if st.button("Reset Game", use_container_width=True):
-            st.session_state.secret_number = random.randint(1, 100)
-            st.session_state.guess_tries = 10
+    # --- TAB 1: PERSISTENT CHATBOX ---
+    with tab1:
+        st.header("💬 Goofy Chat Box")
+        st.write("Leave a message for the gang!")
+        
+        # Load messages directly from the local file storage
+        live_messages = load_saved_chat()
+        
+        chat_container = st.container(height=300)
+        with chat_container:
+            if not live_messages:
+                st.info("No messages saved yet. Type below to start the conversation!")
+            for msg in live_messages:
+                with st.chat_message("user"):
+                    st.write(f"**{msg['user']}**: {msg['text']}")
+
+        if prompt := st.chat_input("Type a message to the group..."):
+            append_saved_chat(st.session_state.username, prompt)
             st.rerun()
 
-    st.divider()
-
-    # --- PERMANENT CHATBOX SECTION ---
-    st.header("💬 Goofy Chat Box")
-    
-    # Load messages directly from the local file storage
-    live_messages = load_saved_chat()
-    
-    chat_container = st.container(height=300)
-    with chat_container:
-        if not live_messages:
-            st.info("No messages saved yet. Type below to start the conversation!")
-        for msg in live_messages:
-            with st.chat_message("user"):
-                st.write(f"**{msg['user']}**: {msg['text']}")
-
-    if prompt := st.chat_input("Type a message to the group..."):
-        append_chat_message = append_saved_chat(st.session_state.username, prompt)
-        st.rerun()
+    # --- TAB 2: SECRET NUMBER GAME ---
+    with tab2:
+        st.header("🎲 Secret Number Game")
+        st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
+        
+        if st.session_state.guess_tries > 0:
+            guess = st.number_input("Enter your guess:", min_value=1, max_value=100, step=1, key="game_guess")
+            if st.button("Submit Guess", use_container_width=True):
+                st.session_state.guess_tries -= 1
+                if guess == st.session_state.secret_number:
+                    st.success(f"🥳 Awesome job! The number was {st.session_state.secret_number}!")
+                elif guess < st.session_state.secret_number:
+                    st.warning("Too low!")
+                else:
+                    st.warning("Too high!")
+        else:
+            st.error(f"💥 Game Over! The number was {st.session_state.secret_number}.")
+            if st.button("Reset Game", use_container_width=True):
+                st.session_state.secret_number = random.randint(1, 100)
+                st.session_state.guess_tries = 10
+                st.rerun()
