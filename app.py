@@ -1,10 +1,10 @@
 import random
 import streamlit as st
 
-# Set page configuration
+# Set page configuration with a clean layout
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="centered")
 
-# --- DEFINE CENTRAL STORAGE STRUCTURES (ERROR-FREE CACHING) ---
+# --- CENTRAL MEMORY CACHE (ERROR-FREE STORAGE) ---
 if "master_password" not in st.session_state:
     st.session_state.master_password = "goofy123"
 if "chat_messages" not in st.session_state:
@@ -15,8 +15,6 @@ if "username" not in st.session_state:
     st.session_state.username = ""
 if "allowed_users" not in st.session_state:
     st.session_state.allowed_users = ["Calvin", "Austin", "George", "Isaac", "Isaiah", "Fox", "Chris", "Leo", "Carson", "Soren", "Edward", "Pranav"]
-if "text_color" not in st.session_state:
-    st.session_state.text_color = "#111111"  # Default to crisp dark text
 
 # --- GAME SESSION STATES ---
 if "secret_number" not in st.session_state:
@@ -51,27 +49,23 @@ def check_ttt_winner(b):
     return None
 
 
-# --- FORCE WHITE BACKGROUND & DARK TEXT STYLING ---
+# --- DARK MODE & INPUT FIELD CONTRAST CSS ---
 st.markdown(
-    f"""
+    """
     <style>
-    /* Force main app area background to white */
-    .stApp {{
-        background-color: #FFFFFF !important;
-    }}
-    /* Force sidebar panel background to light gray for contrast */
-    [data-testid="stSidebar"] {{
-        background-color: #F8F9FA !important;
-    }}
-    /* Force all app text labels to stay dark black/gray */
-    .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {{
-        color: {st.session_state.text_color} !important;
-    }}
-    /* Keep input fields clear, high-contrast, and legible */
-    input {{
+    /* Force high-visibility white text on all markdown headers and labels */
+    .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {
+        color: #FFFFFF !important;
+    }
+    /* Fix invisible chat text: force typed text inside text areas to stay dark against white/light backgrounds */
+    input, textarea, [data-testid="stChatInput"] textarea {
         color: #111111 !important;
         background-color: #FAFAFA !important;
-    }}
+    }
+    /* Ensure chat bubbles display your user text clearly */
+    div[data-testid="stChatMessage"] p {
+        color: #FFFFFF !important;
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -130,11 +124,6 @@ else:
             st.sidebar.success("Password updated!")
             st.rerun()
     
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("🎨 Customization")
-    chosen_text_color = st.sidebar.color_picker("Pick App Text Color:", st.session_state.text_color)
-    st.session_state.text_color = chosen_text_color
-    
     if st.sidebar.button("Logout", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.username = ""
@@ -157,7 +146,8 @@ else:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
 
-        prompt = st.chat_input("Type a message to the group...", key="group_chat_input")
+        # Using a unified input key system prevents responses from dropping out of memory
+        prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
         if prompt:
             st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
             st.rerun()
@@ -231,9 +221,17 @@ else:
             ai_choice = random.choice(choices)
             st.info(f"🤖 AI bot chose: **{ai_choice}**")
             
-            # Pure flat string tracking to avoid all indentation bugs completely
             u_idx = choices.index(user_choice)
             a_idx = choices.index(ai_choice)
             
             if u_idx == a_idx:
                 st.warning("👔 It's a tie match!")
+            elif (u_idx - a_idx) % 3 == 1:
+                st.success("🔥 You win this round!")
+                st.session_state.rps_user_score += 1
+            else:
+                st.error("💀 AI wins this round!")
+                st.session_state.rps_ai_score += 1
+                
+        if st.button("Reset Scoreboard"):
+            st.session_state.rps_user_score = 0
