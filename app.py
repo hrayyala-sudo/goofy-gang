@@ -149,7 +149,6 @@ else:
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
         
-        # Display the chat container window
         chat_container = st.container(height=350)
         with chat_container:
             if not st.session_state.chat_messages:
@@ -158,7 +157,6 @@ else:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
 
-        # Explicitly key-locked chat input field
         prompt = st.chat_input("Type a message to the group...", key="group_chat_input")
         if prompt:
             st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
@@ -233,7 +231,9 @@ else:
             ai_choice = random.choice(choices)
             st.info(f"🤖 AI bot chose: **{ai_choice}**")
             
-            outcome = "lose"
-            if user_choice == ai_choice:
-                outcome = "tie"
-            if user_choice == "Rock" and ai_choice == "Scissors":
+            # Pure flat string tracking to avoid all indentation bugs completely
+            u_idx = choices.index(user_choice)
+            a_idx = choices.index(ai_choice)
+            
+            if u_idx == a_idx:
+                st.warning("👔 It's a tie match!")
