@@ -57,13 +57,13 @@ else:
     chosen_text_color = st.sidebar.color_picker("Pick App Text Color:", st.session_state.text_color)
     st.session_state.text_color = chosen_text_color
     
-    # HTML injection to apply color properties globally onto markdown texts
+    # HTML injection to apply color properties globally onto markdown texts (Fixed double braces)
     st.markdown(
         f"""
         <style>
         .stApp, .stMarkdown p, h1, h2, h3, span {{
             color: {st.session_state.text_color} !important;
-        }
+        }}
         </style>
         """,
         unsafe_allow_html=True
