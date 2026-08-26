@@ -49,21 +49,21 @@ def check_ttt_winner(b):
     return None
 
 
-# --- DARK MODE & INPUT FIELD CONTRAST CSS ---
+# --- FIXED CONTRAST CSS: TARGETED TEXT COLORING ---
 st.markdown(
     """
     <style>
-    /* Force high-visibility white text on all markdown headers and labels */
-    .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {
+    /* Turn global headers, paragraphs, and game options white */
+    .stApp, .stMarkdown p, h1, h2, h3, label, div[data-testid="stHeader"] {
         color: #FFFFFF !important;
     }
-    /* Fix invisible chat text: force typed text inside text areas to stay dark against white/light backgrounds */
-    input, textarea, [data-testid="stChatInput"] textarea {
+    /* TARGETED FIX: Keep input boxes, chat boxes, and what you type dark gray/black */
+    input, textarea, [data-testid="stChatInput"] textarea, [data-testid="stChatInput"] span {
         color: #111111 !important;
         background-color: #FAFAFA !important;
     }
-    /* Ensure chat bubbles display your user text clearly */
-    div[data-testid="stChatMessage"] p {
+    /* Ensure old messages printed inside the log window are bright and legible */
+    div[data-testid="stChatMessage"] p, div[data-testid="stChatMessage"] span {
         color: #FFFFFF !important;
     }
     </style>
@@ -146,7 +146,7 @@ else:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
 
-        # Using a unified input key system prevents responses from dropping out of memory
+        # Input tracking fix
         prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
         if prompt:
             st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
