@@ -67,10 +67,10 @@ st.markdown(
     .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {{
         color: {st.session_state.text_color} !important;
     }}
-    /* Keep input fields clear and legible */
+    /* Keep input fields clear, high-contrast, and legible */
     input {{
         color: #111111 !important;
-        background-color: #FFFFFF !important;
+        background-color: #FAFAFA !important;
     }}
     </style>
     """,
@@ -149,6 +149,7 @@ else:
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
         
+        # Display the chat container window
         chat_container = st.container(height=350)
         with chat_container:
             if not st.session_state.chat_messages:
@@ -157,7 +158,9 @@ else:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
 
-        if prompt := st.chat_input("Type a message to the group..."):
+        # Explicitly key-locked chat input field
+        prompt = st.chat_input("Type a message to the group...", key="group_chat_input")
+        if prompt:
             st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
             st.rerun()
 
@@ -230,9 +233,7 @@ else:
             ai_choice = random.choice(choices)
             st.info(f"🤖 AI bot chose: **{ai_choice}**")
             
-            # Flattest possible outcome evaluations to guarantee zero spacing bugs
             outcome = "lose"
             if user_choice == ai_choice:
                 outcome = "tie"
             if user_choice == "Rock" and ai_choice == "Scissors":
-                outcome = "win"
