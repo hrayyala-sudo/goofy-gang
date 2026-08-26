@@ -17,10 +17,40 @@ if "allowed_users" not in st.session_state:
     st.session_state.allowed_users = ["Calvin", "Austin", "George", "Isaac", "Isaiah", "Fox", "Chris", "Leo", "Carson", "Soren", "Edward", "Pranav"]
 if "text_color" not in st.session_state:
     st.session_state.text_color = "#31333F"
+
+# --- GAME SESSION STATES ---
+# Secret Number Game
 if "secret_number" not in st.session_state:
     st.session_state.secret_number = random.randint(1, 100)
 if "guess_tries" not in st.session_state:
     st.session_state.guess_tries = 10
+
+# Tic-Tac-Toe
+if "ttt_board" not in st.session_state:
+    st.session_state.ttt_board = [" "] * 9
+if "ttt_turn" not in st.session_state:
+    st.session_state.ttt_turn = "X"
+if "ttt_winner" not in st.session_state:
+    st.session_state.ttt_winner = None
+
+# Rock Paper Scissors Trackers
+if "rps_user_score" not in st.session_state:
+    st.session_state.rps_user_score = 0
+if "rps_ai_score" not in st.session_state:
+    st.session_state.rps_ai_score = 0
+
+
+# --- TIC-TAC-TOE HELPERS ---
+def check_ttt_winner(board):
+    win_combinations = [, [3, 4, 5], [6, 7, 8],  # Rows, [1, 4, 7], [2, 5, 8],  # Columns, [2, 4, 6]             # Diagonals
+    ]
+    for combo in win_combinations:
+        if board[combo[0]] == board[combo[1]] == board[combo[2]] != " ":
+            return board[combo[0]]
+    if " " not in board:
+        return "Tie"
+    return None
+
 
 # --- LOGIN SCREEN ---
 if not st.session_state.logged_in:
@@ -44,14 +74,24 @@ if not st.session_state.logged_in:
 
 # --- MAIN DASHBOARD INTERFACE ---
 else:
+    # --- SIDEBAR CONTROL PANEL ---
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
-    # NEW: Sidebar Clickable Dot Navigation
+    # NEW FEATURE: Username Change Option
+    st.sidebar.subheader("👤 Profile Settings")
+    new_username_input = st.sidebar.text_input("Change Nickname:", value=st.session_state.username)
+    if st.sidebar.button("Save New Nickname", use_container_width=True):
+        if new_username_input.strip():
+            st.session_state.username = new_username_input.strip()
+            st.sidebar.success("Username updated!")
+            st.rerun()
+
+    # Sidebar Clickable Dot Navigation
     st.sidebar.markdown("---")
     st.sidebar.subheader("📍 Navigation Pages")
     page_selection = st.sidebar.radio(
         "Go to page:",
-        ["💬 Goofy Chatbox", "🎲 Guessing Game"]
+        ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors"]
     )
     
     # Calvin's Admin setup updates the state password instantly
@@ -72,7 +112,7 @@ else:
     st.markdown(
         f"""
         <style>
-        .stApp, .stMarkdown p, h1, h2, h3, span {{
+        .stApp, .stMarkdown p, h1, h2, h3, span, label {{
             color: {st.session_state.text_color} !important;
         }}
         </style>
@@ -88,6 +128,8 @@ else:
     st.title("🎉 Goofy Gang Dashboard")
     
     # --- RENDER THE PAGE CHOSEN VIA SIDEBAR DOTS ---
+    
+    # PAGE 1: CHATBOX
     if page_selection == "💬 Goofy Chatbox":
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
@@ -104,6 +146,7 @@ else:
             st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
             st.rerun()
 
+    # PAGE 2: GUESSING GAME
     elif page_selection == "🎲 Guessing Game":
         st.header("🎲 Secret Number Game")
         st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
@@ -124,3 +167,66 @@ else:
                 st.session_state.secret_number = random.randint(1, 100)
                 st.session_state.guess_tries = 10
                 st.rerun()
+
+    # NEW PAGE 3: TIC-TAC-TOE
+    elif page_selection == "❌ Tic-Tac-Toe":
+        st.header("❌ Tic-Tac-Toe")
+        st.write(f"Current Turn: **{st.session_state.ttt_turn}**")
+        
+        # Display the grid using 3 layout columns
+        for row in range(3):
+            cols = st.columns(3)
+            for col in range(3):
+                idx = row * 3 + col
+                button_label = st.session_state.ttt_board[idx]
+                
+                # Make empty cells clickable, otherwise show letter
+                if button_label == " " and st.session_state.ttt_winner is None:
+                    if cols[col].button(" ", key=f"ttt_{idx}", use_container_width=True):
+                        st.session_state.ttt_board[idx] = st.session_state.ttt_turn
+                        winner = check_ttt_winner(st.session_state.ttt_board)
+                        if winner:
+                            st.session_state.ttt_winner = winner
+                        else:
+                            st.session_state.ttt_turn = "O" if st.session_state.ttt_turn == "X" else "X"
+                        st.rerun()
+                else:
+                    cols[col].button(button_label, key=f"ttt_{idx}", disabled=True, use_container_width=True)
+                    
+        if st.session_state.ttt_winner:
+            if st.session_state.ttt_winner == "Tie":
+                st.info("🤝 It's a draw tie game!")
+            else:
+                st.success(f"🎉 Winner is Player: **{st.session_state.ttt_winner}**!")
+                
+            if st.button("Reset Grid", use_container_width=True):
+                st.session_state.ttt_board = [" "] * 9
+                st.session_state.ttt_turn = "X"
+                st.session_state.ttt_winner = None
+                st.rerun()
+
+    # NEW PAGE 4: ROCK PAPER SCISSORS
+    elif page_selection == "🪨 Rock Paper Scissors":
+        st.header("🪨 Rock Paper Scissors")
+        st.write(f"🏆 Scoreboard — **You**: {st.session_state.rps_user_score} | **AI Bot**: {st.session_state.rps_ai_score}")
+        
+        choices = ["Rock", "Paper", "Scissors"]
+        user_choice = st.selectbox("Pick your weapon:", choices)
+        
+        if st.button("Shoot!", use_container_width=True):
+            ai_choice = random.choice(choices)
+            st.info(f"🤖 AI bot chose: **{ai_choice}**")
+            
+            if user_choice == ai_choice:
+                st.warning("👔 It's a tie match!")
+            elif (user_choice == "Rock" and ai_choice == "Scissors") or \
+                 (user_choice == "Paper" and ai_choice == "Rock") or \
+                 (user_choice == "Scissors" and ai_choice == "Paper"):
+                st.success("🔥 You win this round!")
+                st.session_state.rps_user_score += 1
+            else:
+                st.error("💀 AI wins this round!")
+                st.session_state.rps_ai_score += 1
+                
+        if st.button("Reset Scoreboard"):
+            st.session_state.rps_user_score = 0
