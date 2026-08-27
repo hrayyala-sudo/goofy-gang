@@ -7,7 +7,6 @@ import json
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="centered")
 
 # --- UNIQUE BACKGROUND STORAGE PATH CONFIGURATION ---
-# Using the universal cloud container OS temp path ensures files stick when tabs close
 DATA_FILE = "/tmp/goofy_gang_persistent_data.json"
 
 def load_from_storage():
@@ -234,3 +233,6 @@ else:
         user_choice = st.selectbox("Pick your weapon:", choices)
         
         if st.button("Shoot!", use_container_width=True):
+            ai_choice = random.choice(choices)
+            st.info(f"🤖 AI bot chose: **{ai_choice}**")
+            
