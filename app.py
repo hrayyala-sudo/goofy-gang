@@ -57,7 +57,7 @@ st.markdown(
     .stApp, .stMarkdown p, h1, h2, h3, label, div[data-testid="stHeader"] {
         color: #FFFFFF !important;
     }
-    /* TARGETED FIX: Keep input boxes, chat boxes, and what you type dark gray/black */
+    /* Keep input boxes, chat boxes, and what you type dark gray/black */
     input, textarea, [data-testid="stChatInput"] textarea, [data-testid="stChatInput"] span {
         color: #111111 !important;
         background-color: #FAFAFA !important;
@@ -131,6 +131,13 @@ else:
         
     st.title("🎉 Goofy Gang Dashboard")
     
+    # --- GLOBAL CHAT INPUT PROCESSING ---
+    # Captures inputs globally so page context resets don't dump active string variables
+    prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
+    if prompt and page_selection == "💬 Goofy Chatbox":
+        st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
+        st.rerun()
+
     # --- RENDER THE PAGE CHOSEN VIA SIDEBAR DOTS ---
     
     # PAGE 1: CHATBOX
@@ -145,12 +152,6 @@ else:
             for msg in st.session_state.chat_messages:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
-
-        # Input tracking fix
-        prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
-        if prompt:
-            st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
-            st.rerun()
 
     # PAGE 2: GUESSING GAME
     elif page_selection == "🎲 Guessing Game":
@@ -232,6 +233,3 @@ else:
             else:
                 st.error("💀 AI wins this round!")
                 st.session_state.rps_ai_score += 1
-                
-        if st.button("Reset Scoreboard"):
-            st.session_state.rps_user_score = 0
