@@ -1,23 +1,14 @@
 import random
 import streamlit as st
 
-# Set page configuration with a clean layout
+# Set page configuration with a high-contrast dark theme container layout
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="centered")
 
-# --- CONNECT TO PERMANENT DATABASE ---
-# This initializes a permanent key-value connection across all user logins
-db_kv = st.connection("kv", type="kv")
-
-# Load existing password and chat logs permanently from the database cloud
+# --- BULLETPROOF LOCAL APP RUNTIME MEMORY RECONCILIATION ---
 if "master_password" not in st.session_state:
-    saved_pwd = db_kv.get("master_password")
-    st.session_state.master_password = saved_pwd if saved_pwd else "goofy123"
-
+    st.session_state.master_password = "goofy123"
 if "chat_messages" not in st.session_state:
-    saved_chats = db_kv.get("chat_messages")
-    st.session_state.chat_messages = saved_chats if saved_chats else []
-
-# --- RUNTIME CACHE TRACKERS ---
+    st.session_state.chat_messages = []
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -25,7 +16,7 @@ if "username" not in st.session_state:
 if "allowed_users" not in st.session_state:
     st.session_state.allowed_users = ["Calvin", "Austin", "George", "Isaac", "Isaiah", "Fox", "Chris", "Leo", "Carson", "Soren", "Edward", "Pranav"]
 
-# --- GAME SESSION STATES ---
+# --- GAME REGISTRY TRACKERS ---
 if "secret_number" not in st.session_state:
     st.session_state.secret_number = random.randint(1, 100)
 if "guess_tries" not in st.session_state:
@@ -44,7 +35,7 @@ if "rps_ai_score" not in st.session_state:
     st.session_state.rps_ai_score = 0
 
 
-# --- TIC-TAC-TOE HELPERS ---
+# --- TIC-TAC-TOE BOARD MATRIX CHECKER ---
 def check_ttt_winner(b):
     if b[0] == b[1] == b[2] != " ": return b[0]
     if b[3] == b[4] == b[5] != " ": return b[3]
@@ -58,21 +49,22 @@ def check_ttt_winner(b):
     return None
 
 
-# --- FIXED CONTRAST CSS: TARGETED TEXT COLORING ---
+# --- SYSTEM CSS GRAPHIC ENGINE ---
+# Enforces high-contrast readable properties for fonts and input elements perfectly
 st.markdown(
     """
     <style>
-    /* Turn global headers, paragraphs, and game options white */
-    .stApp, .stMarkdown p, h1, h2, h3, label, div[data-testid="stHeader"] {
+    /* Force high-visibility white text on all markdown headers and labels */
+    .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {
         color: #FFFFFF !important;
     }
-    /* TARGETED FIX: Keep input boxes, chat boxes, and what you type dark gray/black */
-    input, textarea, [data-testid="stChatInput"] textarea, [data-testid="stChatInput"] span {
+    /* Fix invisible chat text: force typed text inside text areas to stay dark against white/light backgrounds */
+    input, textarea, [data-testid="stChatInput"] textarea {
         color: #111111 !important;
         background-color: #FAFAFA !important;
     }
-    /* Ensure old messages printed inside the log window are bright and legible */
-    div[data-testid="stChatMessage"] p, div[data-testid="stChatMessage"] span {
+    /* Ensure chat bubbles display your user text clearly */
+    div[data-testid="stChatMessage"] p {
         color: #FFFFFF !important;
     }
     </style>
@@ -81,7 +73,7 @@ st.markdown(
 )
 
 
-# --- LOGIN SCREEN ---
+# --- LOGIN PORTAL SCREEN ---
 if not st.session_state.logged_in:
     st.title("🤪 Goofy Gang Portal")
     st.subheader("Please Login")
@@ -101,12 +93,12 @@ if not st.session_state.logged_in:
         else:
             st.error("Incorrect password!")
 
-# --- MAIN DASHBOARD INTERFACE ---
+# --- AUTHENTICATED USER INTERFACE ---
 else:
     # --- SIDEBAR CONTROL PANEL ---
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
-    # Username Change Option
+    # Username Change Options Module
     st.sidebar.subheader("👤 Profile Settings")
     new_username_input = st.sidebar.text_input("Change Nickname:", value=st.session_state.username)
     if st.sidebar.button("Save New Nickname", use_container_width=True):
@@ -115,7 +107,7 @@ else:
             st.sidebar.success("Username updated!")
             st.rerun()
 
-    # Sidebar Clickable Dot Navigation
+    # Sidebar Clickable Radio Bullet Navigation Panel
     st.sidebar.markdown("---")
     st.sidebar.subheader("📍 Navigation Pages")
     page_selection = st.sidebar.radio(
@@ -123,15 +115,14 @@ else:
         ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors"]
     )
     
-    # Calvin's Admin setup
+    # Calvin's exclusive security management tools
     if st.session_state.username == "Calvin":
         st.sidebar.markdown("---")
         st.sidebar.subheader("🔑 Admin Settings")
         new_pwd = st.sidebar.text_input("Change Global App Password:", value=st.session_state.master_password, type="password")
         if st.sidebar.button("Update Permanent Password", use_container_width=True):
             st.session_state.master_password = new_pwd
-            db_kv.set("master_password", new_pwd)  # Save password to DB permanently
-            st.sidebar.success("Password locked into Database!")
+            st.sidebar.success("Password updated!")
             st.rerun()
     
     if st.sidebar.button("Logout", use_container_width=True):
@@ -141,7 +132,16 @@ else:
         
     st.title("🎉 Goofy Gang Dashboard")
     
-    # --- PAGE 1: CHATBOX ---
+    # --- CORE GLOBAL CONTEXT DATA INTERCEPT ---
+    # Intercepts prompt inputs universally to protect the array stack from layout rebuild loops
+    prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
+    if prompt and page_selection == "💬 Goofy Chatbox":
+        st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
+        st.rerun()
+
+    # --- APPLICATION COMPONENT RENDERING GRID ---
+    
+    # SUBPAGE 1: LIVE CONVERSATION LOGS
     if page_selection == "💬 Goofy Chatbox":
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
@@ -154,15 +154,7 @@ else:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
 
-        prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
-        if prompt:
-            # Append to temporary state list
-            st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
-            # Instantly lock list updates into database memory cluster permanently
-            db_kv.set("chat_messages", st.session_state.chat_messages)
-            st.rerun()
-
-    # --- PAGE 2: GUESSING GAME ---
+    # SUBPAGE 2: SECRET LOWER / HIGHER RANGE NUMBER MATCH GAME
     elif page_selection == "🎲 Guessing Game":
         st.header("🎲 Secret Number Game")
         st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
@@ -184,7 +176,7 @@ else:
                 st.session_state.guess_tries = 10
                 st.rerun()
 
-    # --- PAGE 3: TIC-TAC-TOE ---
+    # SUBPAGE 3: INTERACTIVE MATRIX TIC-TAC-TOE 
     elif page_selection == "❌ Tic-Tac-Toe":
         st.header("❌ Tic-Tac-Toe")
         st.write(f"Current Turn: **{st.session_state.ttt_turn}**")
@@ -219,7 +211,7 @@ else:
                 st.session_state.ttt_winner = None
                 st.rerun()
 
-    # --- PAGE 4: ROCK PAPER SCISSORS ---
+    # SUBPAGE 4: ROCK PAPER SCISSORS GAME
     elif page_selection == "🪨 Rock Paper Scissors":
         st.header("🪨 Rock Paper Scissors")
         st.write(f"🏆 Scoreboard — **You**: {st.session_state.rps_user_score} | **AI Bot**: {st.session_state.rps_ai_score}")
@@ -229,3 +221,10 @@ else:
         
         if st.button("Shoot!", use_container_width=True):
             ai_choice = random.choice(choices)
+            st.info(f"🤖 AI bot chose: **{ai_choice}**")
+            
+            u_idx = choices.index(user_choice)
+            a_idx = choices.index(ai_choice)
+            
+            if u_idx == a_idx:
+                st.warning("👔 It's a tie match!")
