@@ -37,33 +37,29 @@ if "rps_ai_score" not in st.session_state:
 
 # --- TIC-TAC-TOE BOARD MATRIX CHECKER ---
 def check_ttt_winner(b):
-    if b[0] == b[1] == b[2] != " ": return b[0]
-    if b[3] == b[4] == b[5] != " ": return b[3]
-    if b[6] == b[7] == b[8] != " ": return b[6]
-    if b[0] == b[3] == b[6] != " ": return b[0]
-    if b[1] == b[4] == b[7] != " ": return b[1]
-    if b[2] == b[5] == b[8] != " ": return b[2]
-    if b[0] == b[4] == b[8] != " ": return b[0]
-    if b[2] == b[4] == b[6] != " ": return b[2]
+    if b == b == b != " ": return b
+    if b == b == b != " ": return b
+    if b == b == b != " ": return b
+    if b == b == b != " ": return b
+    if b == b == b != " ": return b
+    if b == b == b != " ": return b
+    if b == b == b != " ": return b
+    if b == b == b != " ": return b
     if " " not in b: return "Tie"
     return None
 
 
 # --- SYSTEM CSS GRAPHIC ENGINE ---
-# Enforces high-contrast readable properties for fonts and input elements perfectly
 st.markdown(
     """
     <style>
-    /* Force high-visibility white text on all markdown headers and labels */
     .stApp, .stMarkdown p, h1, h2, h3, span, label, div[data-testid="stHeader"] {
         color: #FFFFFF !important;
     }
-    /* Fix invisible chat text: force typed text inside text areas to stay dark against white/light backgrounds */
     input, textarea, [data-testid="stChatInput"] textarea {
         color: #111111 !important;
         background-color: #FAFAFA !important;
     }
-    /* Ensure chat bubbles display your user text clearly */
     div[data-testid="stChatMessage"] p {
         color: #FFFFFF !important;
     }
@@ -95,10 +91,8 @@ if not st.session_state.logged_in:
 
 # --- AUTHENTICATED USER INTERFACE ---
 else:
-    # --- SIDEBAR CONTROL PANEL ---
     st.sidebar.title(f"👋 Welcome, {st.session_state.username}!")
     
-    # Username Change Options Module
     st.sidebar.subheader("👤 Profile Settings")
     new_username_input = st.sidebar.text_input("Change Nickname:", value=st.session_state.username)
     if st.sidebar.button("Save New Nickname", use_container_width=True):
@@ -107,7 +101,6 @@ else:
             st.sidebar.success("Username updated!")
             st.rerun()
 
-    # Sidebar Clickable Radio Bullet Navigation Panel
     st.sidebar.markdown("---")
     st.sidebar.subheader("📍 Navigation Pages")
     page_selection = st.sidebar.radio(
@@ -115,7 +108,6 @@ else:
         ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors"]
     )
     
-    # Calvin's exclusive security management tools
     if st.session_state.username == "Calvin":
         st.sidebar.markdown("---")
         st.sidebar.subheader("🔑 Admin Settings")
@@ -132,8 +124,7 @@ else:
         
     st.title("🎉 Goofy Gang Dashboard")
     
-    # --- CORE GLOBAL CONTEXT DATA INTERCEPT ---
-    # Intercepts prompt inputs universally to protect the array stack from layout rebuild loops
+    # Intercepts prompt inputs universally
     prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
     if prompt and page_selection == "💬 Goofy Chatbox":
         st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
@@ -141,7 +132,7 @@ else:
 
     # --- APPLICATION COMPONENT RENDERING GRID ---
     
-    # SUBPAGE 1: LIVE CONVERSATION LOGS
+    # SUBPAGE 1: CONVERSATION LOGS
     if page_selection == "💬 Goofy Chatbox":
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
@@ -153,8 +144,22 @@ else:
             for msg in st.session_state.chat_messages:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
+        
+        # NEW UTILITY FEATURE: Native backup download compiler
+        if st.session_state.chat_messages:
+            raw_text_summary = ""
+            for msg in st.session_state.chat_messages:
+                raw_text_summary += f"[{msg['user']}]: {msg['text']}\n"
+            
+            st.download_button(
+                label="📥 Save Chat History File",
+                data=raw_text_summary,
+                file_name="goofy_gang_chatlog.txt",
+                mime="text/plain",
+                use_container_width=True
+            )
 
-    # SUBPAGE 2: SECRET LOWER / HIGHER RANGE NUMBER MATCH GAME
+    # SUBPAGE 2: SECRET NUMBER GAME
     elif page_selection == "🎲 Guessing Game":
         st.header("🎲 Secret Number Game")
         st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
@@ -176,7 +181,7 @@ else:
                 st.session_state.guess_tries = 10
                 st.rerun()
 
-    # SUBPAGE 3: INTERACTIVE MATRIX TIC-TAC-TOE 
+    # SUBPAGE 3: INTERACTIVE TIC-TAC-TOE 
     elif page_selection == "❌ Tic-Tac-Toe":
         st.header("❌ Tic-Tac-Toe")
         st.write(f"Current Turn: **{st.session_state.ttt_turn}**")
@@ -228,3 +233,8 @@ else:
             
             if u_idx == a_idx:
                 st.warning("👔 It's a tie match!")
+            elif (u_idx - a_idx) % 3 == 1:
+                st.success("🔥 You win this round!")
+                st.session_state.rps_user_score += 1
+            else:
+                st.error("💀 AI wins this round!")
