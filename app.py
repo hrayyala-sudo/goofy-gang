@@ -4,11 +4,20 @@ import streamlit as st
 # Set page configuration with a clean layout
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="centered")
 
-# --- CENTRAL MEMORY CACHE (ERROR-FREE STORAGE) ---
+# --- CONNECT TO PERMANENT DATABASE ---
+# This initializes a permanent key-value connection across all user logins
+db_kv = st.connection("kv", type="kv")
+
+# Load existing password and chat logs permanently from the database cloud
 if "master_password" not in st.session_state:
-    st.session_state.master_password = "goofy123"
+    saved_pwd = db_kv.get("master_password")
+    st.session_state.master_password = saved_pwd if saved_pwd else "goofy123"
+
 if "chat_messages" not in st.session_state:
-    st.session_state.chat_messages = []
+    saved_chats = db_kv.get("chat_messages")
+    st.session_state.chat_messages = saved_chats if saved_chats else []
+
+# --- RUNTIME CACHE TRACKERS ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -57,7 +66,7 @@ st.markdown(
     .stApp, .stMarkdown p, h1, h2, h3, label, div[data-testid="stHeader"] {
         color: #FFFFFF !important;
     }
-    /* Keep input boxes, chat boxes, and what you type dark gray/black */
+    /* TARGETED FIX: Keep input boxes, chat boxes, and what you type dark gray/black */
     input, textarea, [data-testid="stChatInput"] textarea, [data-testid="stChatInput"] span {
         color: #111111 !important;
         background-color: #FAFAFA !important;
@@ -121,7 +130,8 @@ else:
         new_pwd = st.sidebar.text_input("Change Global App Password:", value=st.session_state.master_password, type="password")
         if st.sidebar.button("Update Permanent Password", use_container_width=True):
             st.session_state.master_password = new_pwd
-            st.sidebar.success("Password updated!")
+            db_kv.set("master_password", new_pwd)  # Save password to DB permanently
+            st.sidebar.success("Password locked into Database!")
             st.rerun()
     
     if st.sidebar.button("Logout", use_container_width=True):
@@ -131,16 +141,7 @@ else:
         
     st.title("🎉 Goofy Gang Dashboard")
     
-    # --- GLOBAL CHAT INPUT PROCESSING ---
-    # Captures inputs globally so page context resets don't dump active string variables
-    prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
-    if prompt and page_selection == "💬 Goofy Chatbox":
-        st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
-        st.rerun()
-
-    # --- RENDER THE PAGE CHOSEN VIA SIDEBAR DOTS ---
-    
-    # PAGE 1: CHATBOX
+    # --- PAGE 1: CHATBOX ---
     if page_selection == "💬 Goofy Chatbox":
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
@@ -153,7 +154,15 @@ else:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
 
-    # PAGE 2: GUESSING GAME
+        prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
+        if prompt:
+            # Append to temporary state list
+            st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
+            # Instantly lock list updates into database memory cluster permanently
+            db_kv.set("chat_messages", st.session_state.chat_messages)
+            st.rerun()
+
+    # --- PAGE 2: GUESSING GAME ---
     elif page_selection == "🎲 Guessing Game":
         st.header("🎲 Secret Number Game")
         st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
@@ -175,7 +184,7 @@ else:
                 st.session_state.guess_tries = 10
                 st.rerun()
 
-    # PAGE 3: TIC-TAC-TOE
+    # --- PAGE 3: TIC-TAC-TOE ---
     elif page_selection == "❌ Tic-Tac-Toe":
         st.header("❌ Tic-Tac-Toe")
         st.write(f"Current Turn: **{st.session_state.ttt_turn}**")
@@ -210,7 +219,7 @@ else:
                 st.session_state.ttt_winner = None
                 st.rerun()
 
-    # PAGE 4: ROCK PAPER SCISSORS
+    # --- PAGE 4: ROCK PAPER SCISSORS ---
     elif page_selection == "🪨 Rock Paper Scissors":
         st.header("🪨 Rock Paper Scissors")
         st.write(f"🏆 Scoreboard — **You**: {st.session_state.rps_user_score} | **AI Bot**: {st.session_state.rps_ai_score}")
@@ -220,16 +229,3 @@ else:
         
         if st.button("Shoot!", use_container_width=True):
             ai_choice = random.choice(choices)
-            st.info(f"🤖 AI bot chose: **{ai_choice}**")
-            
-            u_idx = choices.index(user_choice)
-            a_idx = choices.index(ai_choice)
-            
-            if u_idx == a_idx:
-                st.warning("👔 It's a tie match!")
-            elif (u_idx - a_idx) % 3 == 1:
-                st.success("🔥 You win this round!")
-                st.session_state.rps_user_score += 1
-            else:
-                st.error("💀 AI wins this round!")
-                st.session_state.rps_ai_score += 1
