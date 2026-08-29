@@ -70,7 +70,7 @@ if "asteroid_lane" not in st.session_state:
 if "dodge_game_over" not in st.session_state:
     st.session_state.dodge_game_over = False
 
-# TIC-TAC-TOE ROW AND COLUMN POSITION INDEXES
+# TIC-TAC-TOE ROW AND COLUMN POSITION INDEXES FIXED
 def check_ttt_winner(b):
     if b[0] == b[1] == b[2] != " ": return b[0]
     if b[3] == b[4] == b[5] != " ": return b[3]
@@ -157,7 +157,7 @@ else:
         
     st.title("🎉 Goofy Gang Dashboard")
 
-    # PAGE 1: PERSISTENT CONVERSATION RECORD WITH CHAT CONTAINER FIXED
+    # PAGE 1: CHATBOX PAGE
     if page_selection == "💬 Goofy Chatbox":
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
@@ -169,7 +169,6 @@ else:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
                     
-        # Chat input is now strictly isolated inside Page 1 to stop page freezing
         prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
         if prompt:
             st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
@@ -177,7 +176,7 @@ else:
             save_to_storage(storage_bucket)
             st.rerun()
 
-    # PAGE 2: NUMBER RANGE GAME
+    # PAGE 2: GUESSING GAME
     elif page_selection == "🎲 Guessing Game":
         st.header("🎲 Secret Number Game")
         st.write(f"Guess the number between 1 and 100. Tries left: **{st.session_state.guess_tries}**")
@@ -198,7 +197,7 @@ else:
             st.session_state.guess_tries = 10
             st.rerun()
 
-    # PAGE 3: GRID TIC-TAC-TOE
+    # PAGE 3: TIC-TAC-TOE
     elif page_selection == "❌ Tic-Tac-Toe":
         st.header("❌ Tic-Tac-Toe")
         st.write(f"Current Turn: **{st.session_state.ttt_turn}**")
@@ -232,3 +231,4 @@ else:
     # PAGE 4: ROCK PAPER SCISSORS GAME
     elif page_selection == "🪨 Rock Paper Scissors":
         st.header("🪨 Rock Paper Scissors")
+        st.write(f"🏆 Scoreboard — **You**: {st.session_state.rps_user_score} | **AI Bot**: {st.session_state.rps_ai_score}")
