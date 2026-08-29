@@ -70,7 +70,7 @@ if "asteroid_lane" not in st.session_state:
 if "dodge_game_over" not in st.session_state:
     st.session_state.dodge_game_over = False
 
-# FIXED: RESTORED CORRECT BOARD INDEX TRACKING
+# RESTORED CORRECT BOARD INDEX STRINGS
 def check_ttt_winner(b):
     if b[0] == b[1] == b[2] != " ": return b[0]
     if b[3] == b[4] == b[5] != " ": return b[3]
