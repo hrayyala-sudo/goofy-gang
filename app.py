@@ -70,7 +70,7 @@ if "asteroid_lane" not in st.session_state:
 if "dodge_game_over" not in st.session_state:
     st.session_state.dodge_game_over = False
 
-# RESTORED CORRECT BOARD INDEX STRINGS
+# TIC-TAC-TOE ROW AND COLUMN POSITION INDEXES
 def check_ttt_winner(b):
     if b[0] == b[1] == b[2] != " ": return b[0]
     if b[3] == b[4] == b[5] != " ": return b[3]
@@ -156,16 +156,8 @@ else:
         st.rerun()
         
     st.title("🎉 Goofy Gang Dashboard")
-    
-    # Global state intercept handling for chat strings
-    prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
-    if prompt and page_selection == "💬 Goofy Chatbox":
-        st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
-        storage_bucket["chat_messages"] = st.session_state.chat_messages
-        save_to_storage(storage_bucket)
-        st.rerun()
 
-    # PAGE 1: PERSISTENT CONVERSATION RECORD
+    # PAGE 1: PERSISTENT CONVERSATION RECORD WITH CHAT CONTAINER FIXED
     if page_selection == "💬 Goofy Chatbox":
         st.header("💬 Goofy Chat Box")
         st.write("Leave a message for the gang!")
@@ -176,6 +168,14 @@ else:
             for msg in st.session_state.chat_messages:
                 with st.chat_message("user"):
                     st.write(f"**{msg['user']}**: {msg['text']}")
+                    
+        # Chat input is now strictly isolated inside Page 1 to stop page freezing
+        prompt = st.chat_input("Type a message to the group...", key="portal_chat_entry_box")
+        if prompt:
+            st.session_state.chat_messages.append({"user": st.session_state.username, "text": prompt})
+            storage_bucket["chat_messages"] = st.session_state.chat_messages
+            save_to_storage(storage_bucket)
+            st.rerun()
 
     # PAGE 2: NUMBER RANGE GAME
     elif page_selection == "🎲 Guessing Game":
