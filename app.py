@@ -59,6 +59,8 @@ if "rps_user_score" not in st.session_state:
     st.session_state.rps_user_score = 0
 if "rps_ai_score" not in st.session_state:
     st.session_state.rps_ai_score = 0
+if "rps_last_result" not in st.session_state:
+    st.session_state.rps_last_result = ""
 
 # --- ASTEROID DODGE STATE VARIABLES ---
 if "dodge_score" not in st.session_state:
@@ -232,3 +234,85 @@ else:
     elif page_selection == "🪨 Rock Paper Scissors":
         st.header("🪨 Rock Paper Scissors")
         st.write(f"🏆 Scoreboard — **You**: {st.session_state.rps_user_score} | **AI Bot**: {st.session_state.rps_ai_score}")
+        
+        cols = st.columns(3)
+        user_choice = None
+        
+        if cols[0].button("🪨 Rock", use_container_width=True):
+            user_choice = "Rock"
+        if cols[1].button("📄 Paper", use_container_width=True):
+            user_choice = "Paper"
+        if cols[2].button("✂️ Scissors", use_container_width=True):
+            user_choice = "Scissors"
+            
+        if user_choice:
+            ai_choice = random.choice(["Rock", "Paper", "Scissors"])
+            if user_choice == ai_choice:
+                st.session_state.rps_last_result = f"🤝 It's a tie! Both chose {user_choice}."
+            elif (user_choice == "Rock" and ai_choice == "Scissors") or \
+                 (user_choice == "Paper" and ai_choice == "Rock") or \
+                 (user_choice == "Scissors" and ai_choice == "Paper"):
+                st.session_state.rps_user_score += 1
+                st.session_state.rps_last_result = f"🎉 You win! {user_choice} beats {ai_choice}."
+            else:
+                st.session_state.rps_ai_score += 1
+                st.session_state.rps_last_result = f"🤖 AI wins! {ai_choice} beats {user_choice}."
+            st.rerun()
+            
+        if st.session_state.rps_last_result:
+            st.info(st.session_state.rps_last_result)
+            
+        if st.button("Reset Scores", use_container_width=True):
+            st.session_state.rps_user_score = 0
+            st.session_state.rps_ai_score = 0
+            st.session_state.rps_last_result = ""
+            st.rerun()
+
+    # PAGE 5: ASTEROID DODGE GAME
+    elif page_selection == "🚀 Asteroid Dodge":
+        st.header("🚀 Asteroid Dodge")
+        st.write(f"Current Score: **{st.session_state.dodge_score}**")
+        
+        if st.session_state.dodge_game_over:
+            st.error(f"💥 Game Over! You hit an asteroid. Final Score: {st.session_state.dodge_score}")
+            if st.button("Play Again", use_container_width=True):
+                st.session_state.dodge_score = 0
+                st.session_state.player_lane = 2
+                st.session_state.asteroid_lane = random.randint(1, 3)
+                st.session_state.dodge_game_over = False
+                st.rerun()
+        else:
+            # Draw game screen
+            cols = st.columns(3)
+            for i in range(1, 4):
+                with cols[i - 1]:
+                    lane_content = []
+                    if st.session_state.asteroid_lane == i:
+                        lane_content.append("🪨 Asteroid!")
+                    if st.session_state.player_lane == i:
+                        lane_content.append("🚀 You")
+                    
+                    if lane_content:
+                        st.info(" & ".join(lane_content))
+                    else:
+                        st.write("— Space —")
+
+            st.write("---")
+            st.subheader("Controls")
+            ctrl_cols = st.columns(3)
+            
+            if ctrl_cols[0].button("⬅️ Left", use_container_width=True):
+                if st.session_state.player_lane > 1:
+                    st.session_state.player_lane -= 1
+            if ctrl_cols[1].button("⚡ Advance Turn", use_container_width=True):
+                pass
+            if ctrl_cols[2].button("Right ➡️", use_container_width=True):
+                if st.session_state.player_lane < 3:
+                    st.session_state.player_lane += 1
+
+            # Check collision logic when turn updates
+            if st.session_state.player_lane == st.session_state.asteroid_lane:
+                st.session_state.dodge_game_over = True
+            else:
+                st.session_state.dodge_score += 10
+                st.session_state.asteroid_lane = random.randint(1, 3)
