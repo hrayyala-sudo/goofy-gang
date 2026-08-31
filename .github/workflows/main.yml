@@ -2,23 +2,25 @@ name: Keep Streamlit Awake
 
 on:
   schedule:
-    - cron: '0 0 * * *'
-  workflow_dispatch:
+    # Runs twice a day (at 00:00 and 12:00 UTC)
+    - cron: '0 0,12 * * *'
+  workflow_dispatch: # Allows manual triggering from the Actions tab
 
 jobs:
-  keep_alive:
+  keep-alive:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
+      - name: Ping Streamlit App
+        run: |
+          # Replace with your actual Goofy Gang app URL
+          curl -s -f https://goofy-gang.streamlit.app/ > /dev/null || echo "Ping failed, but continuing..."
 
-      - name: Push Empty Commit
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Keep Alive Commit
         run: |
           git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit --allow-empty -m "Chore: Keep Streamlit app awake"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "Chore: Keep-alive trigger"
           git push
