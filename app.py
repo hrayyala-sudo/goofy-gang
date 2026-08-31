@@ -6,11 +6,11 @@ from datetime import datetime
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🎉", layout="wide")
 
-# Allowed Users
+# User Credentials & Allowed Users
 ALLOWED_USERS = ["Pranav", "Calvin", "Austin", "Goofy Member"]
 CORRECT_PASSWORD = "goofy123"
 
-# Session State Initialization
+# Initialize Session State
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "nickname" not in st.session_state:
@@ -23,27 +23,26 @@ def get_global_chat():
 
 global_chat = get_global_chat()
 
-# --- 3. ORIGINAL LOGIN SCREEN ---
+# --- 3. ORIGINAL LOGIN GATEWAY ---
 def show_login_screen():
     st.title("🔒 Goofy Gang Portal Login")
-    st.write("Please sign in to access the portal dashboard.")
+    st.write("Welcome back! Please sign in to access the portal.")
     
     col1, _ = st.columns([1, 2])
     with col1:
-        username = st.selectbox("Select your name:", ALLOWED_USERS)
-        custom_name = st.text_input("Or type a custom nickname (optional):")
+        selected_user = st.selectbox("Select your name:", ALLOWED_USERS)
+        custom_nickname = st.text_input("Or type a custom nickname (optional):")
         password = st.text_input("Enter Password:", type="password")
         
         if st.button("Log In", use_container_width=True):
             if password == CORRECT_PASSWORD:
                 st.session_state["logged_in"] = True
-                st.session_state["nickname"] = custom_name.strip() if custom_name.strip() else username
+                st.session_state["nickname"] = custom_nickname.strip() if custom_nickname.strip() else selected_user
                 st.success("Access Granted!")
                 st.rerun()
             else:
                 st.error("Incorrect password! Try again.")
 
-# Lock application until logged in
 if not st.session_state["logged_in"]:
     show_login_screen()
     st.stop()
@@ -61,7 +60,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### 📍 Navigation Pages")
 page = st.sidebar.radio(
     "Go to page:",
-    ["💬 Goofy Chatbox (Multiplayer)", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"]
+    ["📍 Dashboard / Global Chat", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"]
 )
 
 st.sidebar.markdown("---")
@@ -74,10 +73,10 @@ if st.sidebar.button("Logout", use_container_width=True):
 st.title("🎉 Goofy Gang Dashboard")
 st.markdown("---")
 
-# --- PAGE 1: MULTIPLAYER CHATBOX ---
-if page == "💬 Goofy Chatbox (Multiplayer)":
-    st.header("💬 Goofy Chatbox (Global Lounge)")
-    st.write("Chat live with other members active on the site!")
+# --- PAGE 1: DASHBOARD & GLOBAL CHAT ---
+if page == "📍 Dashboard / Global Chat":
+    st.header("💬 Goofy Chatbox")
+    st.write("Welcome to the main chat room! Messages update for everyone.")
 
     if st.button("🔄 Refresh Messages"):
         st.rerun()
@@ -91,7 +90,7 @@ if page == "💬 Goofy Chatbox (Multiplayer)":
                 st.markdown(f"**{msg['sender']}** *({msg['time']})*")
                 st.write(msg["text"])
 
-    user_msg = st.chat_input("Type a message to the gang...")
+    user_msg = st.chat_input("Say something goofy...")
     if user_msg:
         time_str = datetime.now().strftime("%I:%M %p")
         global_chat.append({
@@ -297,6 +296,7 @@ elif page == "🚀 Asteroid Dodge":
         function draw() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+          // Ship
           ctx.fillStyle = "#ff4b4b";
           ctx.beginPath();
           ctx.moveTo(player.x + player.width / 2, player.y);
@@ -305,6 +305,7 @@ elif page == "🚀 Asteroid Dodge":
           ctx.closePath();
           ctx.fill();
 
+          // Asteroids
           ctx.fillStyle = "#8b949e";
           asteroids.forEach(a => {
             ctx.beginPath();
@@ -312,6 +313,7 @@ elif page == "🚀 Asteroid Dodge":
             ctx.fill();
           });
 
+          // Score
           ctx.fillStyle = "#ffffff";
           ctx.font = "16px sans-serif";
           ctx.fillText("Score: " + score, 15, 25);
