@@ -6,47 +6,51 @@ from datetime import datetime
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🎉", layout="wide")
 
-# Initialize User Session State
+# Allowed Users
+ALLOWED_USERS = ["Pranav", "Calvin", "Austin", "Goofy Member"]
+CORRECT_PASSWORD = "goofy123"
+
+# Session State Initialization
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "nickname" not in st.session_state:
-    st.session_state["nickname"] = "Pranav"
+    st.session_state["nickname"] = ""
 
-# --- 2. GLOBAL MULTIPLAYER CHAT STORAGE ---
-# @st.cache_resource keeps this list shared across ALL connected users on the website
+# --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
 def get_global_chat():
     return []
 
 global_chat = get_global_chat()
 
-# --- 3. LOGIN SCREEN ---
+# --- 3. ORIGINAL LOGIN SCREEN ---
 def show_login_screen():
     st.title("🔒 Goofy Gang Portal Login")
-    st.write("Welcome back! Please sign in to access the portal.")
+    st.write("Please sign in to access the portal dashboard.")
     
-    col1, col2 = st.columns([1, 2])
+    col1, _ = st.columns([1, 2])
     with col1:
-        username = st.text_input("Username / Nickname")
-        password = st.text_input("Password", type="password")
+        username = st.selectbox("Select your name:", ALLOWED_USERS)
+        custom_name = st.text_input("Or type a custom nickname (optional):")
+        password = st.text_input("Enter Password:", type="password")
         
         if st.button("Log In", use_container_width=True):
-            if username.strip() != "":
+            if password == CORRECT_PASSWORD:
                 st.session_state["logged_in"] = True
-                st.session_state["nickname"] = username.strip()
+                st.session_state["nickname"] = custom_name.strip() if custom_name.strip() else username
                 st.success("Access Granted!")
                 st.rerun()
             else:
-                st.error("Please enter a username.")
+                st.error("Incorrect password! Try again.")
 
+# Lock application until logged in
 if not st.session_state["logged_in"]:
     show_login_screen()
-    st.stop()  # Lock the rest of the application until logged in
+    st.stop()
 
 # --- 4. SIDEBAR NAVIGATION ---
 st.sidebar.title(f"👋 Welcome, {st.session_state['nickname']}!")
 
-# Profile Settings
 st.sidebar.markdown("### 👤 Profile Settings")
 new_nick = st.sidebar.text_input("Change Nickname:", value=st.session_state["nickname"])
 if st.sidebar.button("Save New Nickname"):
@@ -63,9 +67,10 @@ page = st.sidebar.radio(
 st.sidebar.markdown("---")
 if st.sidebar.button("Logout", use_container_width=True):
     st.session_state["logged_in"] = False
+    st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN DASHBOARD PAGES ---
+# --- 5. MAIN DASHBOARD ---
 st.title("🎉 Goofy Gang Dashboard")
 st.markdown("---")
 
@@ -77,7 +82,6 @@ if page == "💬 Goofy Chatbox (Multiplayer)":
     if st.button("🔄 Refresh Messages"):
         st.rerun()
 
-    # Display shared messages
     chat_container = st.container()
     with chat_container:
         if not global_chat:
@@ -87,7 +91,6 @@ if page == "💬 Goofy Chatbox (Multiplayer)":
                 st.markdown(f"**{msg['sender']}** *({msg['time']})*")
                 st.write(msg["text"])
 
-    # Message Input
     user_msg = st.chat_input("Type a message to the gang...")
     if user_msg:
         time_str = datetime.now().strftime("%I:%M %p")
@@ -294,7 +297,6 @@ elif page == "🚀 Asteroid Dodge":
         function draw() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Draw Ship
           ctx.fillStyle = "#ff4b4b";
           ctx.beginPath();
           ctx.moveTo(player.x + player.width / 2, player.y);
@@ -303,7 +305,6 @@ elif page == "🚀 Asteroid Dodge":
           ctx.closePath();
           ctx.fill();
 
-          // Draw Asteroids
           ctx.fillStyle = "#8b949e";
           asteroids.forEach(a => {
             ctx.beginPath();
@@ -311,7 +312,6 @@ elif page == "🚀 Asteroid Dodge":
             ctx.fill();
           });
 
-          // Draw Score
           ctx.fillStyle = "#ffffff";
           ctx.font = "16px sans-serif";
           ctx.fillText("Score: " + score, 15, 25);
