@@ -23,47 +23,52 @@ def get_global_chat():
 
 global_chat = get_global_chat()
 
-# --- 3. FIRST ORIGINAL LOGIN SYSTEM ---
+# --- 3. CENTERED COMPACT LOGIN SYSTEM ---
 def show_login_screen():
-    st.title("🔒 Goofy Gang Portal Login")
-    st.write("Please sign in to access the portal.")
+    # Use columns to center and constrain width
+    _, center_col, _ = st.columns([1, 1, 1])
+    
+    with center_col:
+        st.title("🔒 Goofy Gang Portal Login")
+        st.caption("Please sign in to access the portal.")
 
-    user_input = st.text_input("Enter Your Name:")
-    pass_input = st.text_input("Enter Password:", type="password")
+        user_input = st.text_input("Enter Your Name:", key="login_name")
+        pass_input = st.text_input("Enter Password:", type="password", key="login_pass")
 
-    if st.button("Login"):
-        if user_input.strip() in ALLOWED_USERS and pass_input == CORRECT_PASSWORD:
-            st.session_state["logged_in"] = True
-            st.session_state["nickname"] = user_input.strip()
-            st.success(f"Welcome, {user_input}!")
-            st.rerun()
-        elif user_input.strip() not in ALLOWED_USERS:
-            st.error("Name not recognized! Please enter an authorized name.")
-        else:
-            st.error("Incorrect password!")
+        if st.button("Login", use_container_width=True):
+            if user_input.strip() in ALLOWED_USERS and pass_input == CORRECT_PASSWORD:
+                st.session_state["logged_in"] = True
+                st.session_state["nickname"] = user_input.strip()
+                st.success(f"Welcome, {user_input}!")
+                st.rerun()
+            elif user_input.strip() not in ALLOWED_USERS:
+                st.error("Name not recognized! Please enter an authorized name.")
+            else:
+                st.error("Incorrect password!")
 
 if not st.session_state["logged_in"]:
     show_login_screen()
     st.stop()
 
-# --- 4. SIDEBAR NAVIGATION ---
-st.sidebar.title(f"👋 Welcome, {st.session_state['nickname']}!")
+# --- 4. COMPACT SIDEBAR NAVIGATION ---
+st.sidebar.caption(f"Logged in as **{st.session_state['nickname']}**")
 
-st.sidebar.markdown("### 👤 Profile Settings")
-new_nick = st.sidebar.text_input("Change Nickname:", value=st.session_state["nickname"])
-if st.sidebar.button("Save New Nickname"):
+st.sidebar.markdown("**Profile Settings**")
+new_nick = st.sidebar.text_input("Change Nickname:", value=st.session_state["nickname"], label_visibility="collapsed")
+if st.sidebar.button("Save Nickname"):
     st.session_state["nickname"] = new_nick
     st.rerun()
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 📍 Navigation Pages")
+st.sidebar.divider()
+st.sidebar.markdown("**Pages**")
 page = st.sidebar.radio(
-    "Go to page:",
-    ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"]
+    "Navigation",
+    ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"],
+    label_visibility="collapsed"
 )
 
-st.sidebar.markdown("---")
-if st.sidebar.button("Logout", use_container_width=True):
+st.sidebar.divider()
+if st.sidebar.button("Logout"):
     st.session_state["logged_in"] = False
     st.session_state["nickname"] = ""
     st.rerun()
