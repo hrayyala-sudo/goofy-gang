@@ -6,7 +6,7 @@ from datetime import datetime
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🎉", layout="wide")
 
-# User Credentials & Allowed Users
+# Allowed Users & Password
 ALLOWED_USERS = ["Pranav", "Calvin", "Austin", "Goofy Member"]
 CORRECT_PASSWORD = "goofy123"
 
@@ -23,25 +23,24 @@ def get_global_chat():
 
 global_chat = get_global_chat()
 
-# --- 3. ORIGINAL LOGIN GATEWAY ---
+# --- 3. FIRST ORIGINAL LOGIN SYSTEM ---
 def show_login_screen():
     st.title("🔒 Goofy Gang Portal Login")
-    st.write("Welcome back! Please sign in to access the portal.")
-    
-    col1, _ = st.columns([1, 2])
-    with col1:
-        selected_user = st.selectbox("Select your name:", ALLOWED_USERS)
-        custom_nickname = st.text_input("Or type a custom nickname (optional):")
-        password = st.text_input("Enter Password:", type="password")
-        
-        if st.button("Log In", use_container_width=True):
-            if password == CORRECT_PASSWORD:
-                st.session_state["logged_in"] = True
-                st.session_state["nickname"] = custom_nickname.strip() if custom_nickname.strip() else selected_user
-                st.success("Access Granted!")
-                st.rerun()
-            else:
-                st.error("Incorrect password! Try again.")
+    st.write("Please sign in to access the portal.")
+
+    user_input = st.text_input("Enter Your Name:")
+    pass_input = st.text_input("Enter Password:", type="password")
+
+    if st.button("Login"):
+        if user_input.strip() in ALLOWED_USERS and pass_input == CORRECT_PASSWORD:
+            st.session_state["logged_in"] = True
+            st.session_state["nickname"] = user_input.strip()
+            st.success(f"Welcome, {user_input}!")
+            st.rerun()
+        elif user_input.strip() not in ALLOWED_USERS:
+            st.error("Name not recognized! Please enter an authorized name.")
+        else:
+            st.error("Incorrect password!")
 
 if not st.session_state["logged_in"]:
     show_login_screen()
@@ -60,7 +59,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("### 📍 Navigation Pages")
 page = st.sidebar.radio(
     "Go to page:",
-    ["📍 Dashboard / Global Chat", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"]
+    ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"]
 )
 
 st.sidebar.markdown("---")
@@ -73,8 +72,8 @@ if st.sidebar.button("Logout", use_container_width=True):
 st.title("🎉 Goofy Gang Dashboard")
 st.markdown("---")
 
-# --- PAGE 1: DASHBOARD & GLOBAL CHAT ---
-if page == "📍 Dashboard / Global Chat":
+# --- PAGE 1: GOOFY CHATBOX ---
+if page == "💬 Goofy Chatbox":
     st.header("💬 Goofy Chatbox")
     st.write("Welcome to the main chat room! Messages update for everyone.")
 
