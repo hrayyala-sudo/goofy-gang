@@ -1,65 +1,107 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import random
+from datetime import datetime
 
-# 1. Page Configuration & Setup
+# --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🎉", layout="wide")
 
-# Initialize Session State Variables
+# Initialize User Session State
+if "logged_in" not in st.session_state:
+    st.session_state["logged_in"] = False
 if "nickname" not in st.session_state:
     st.session_state["nickname"] = "Pranav"
-if "chat_history" not in st.session_state:
-    st.session_state["chat_history"] = []
 
-# 2. Sidebar Navigation
+# --- 2. GLOBAL MULTIPLAYER CHAT STORAGE ---
+# @st.cache_resource keeps this list shared across ALL connected users on the website
+@st.cache_resource
+def get_global_chat():
+    return []
+
+global_chat = get_global_chat()
+
+# --- 3. LOGIN SCREEN ---
+def show_login_screen():
+    st.title("🔒 Goofy Gang Portal Login")
+    st.write("Welcome back! Please sign in to access the portal.")
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        username = st.text_input("Username / Nickname")
+        password = st.text_input("Password", type="password")
+        
+        if st.button("Log In", use_container_width=True):
+            if username.strip() != "":
+                st.session_state["logged_in"] = True
+                st.session_state["nickname"] = username.strip()
+                st.success("Access Granted!")
+                st.rerun()
+            else:
+                st.error("Please enter a username.")
+
+if not st.session_state["logged_in"]:
+    show_login_screen()
+    st.stop()  # Lock the rest of the application until logged in
+
+# --- 4. SIDEBAR NAVIGATION ---
 st.sidebar.title(f"👋 Welcome, {st.session_state['nickname']}!")
 
 # Profile Settings
 st.sidebar.markdown("### 👤 Profile Settings")
-new_nickname = st.sidebar.text_input("Change Nickname:", value=st.session_state["nickname"])
+new_nick = st.sidebar.text_input("Change Nickname:", value=st.session_state["nickname"])
 if st.sidebar.button("Save New Nickname"):
-    st.session_state["nickname"] = new_nickname
+    st.session_state["nickname"] = new_nick
     st.rerun()
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📍 Navigation Pages")
-
 page = st.sidebar.radio(
     "Go to page:",
-    ["🤖 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"]
+    ["💬 Goofy Chatbox (Multiplayer)", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge"]
 )
 
-if st.sidebar.button("Logout"):
-    st.session_state["nickname"] = "Guest"
+st.sidebar.markdown("---")
+if st.sidebar.button("Logout", use_container_width=True):
+    st.session_state["logged_in"] = False
     st.rerun()
 
-# 3. Main Dashboard Header
+# --- 5. MAIN DASHBOARD PAGES ---
 st.title("🎉 Goofy Gang Dashboard")
 st.markdown("---")
 
-# 4. Page Logic
+# --- PAGE 1: MULTIPLAYER CHATBOX ---
+if page == "💬 Goofy Chatbox (Multiplayer)":
+    st.header("💬 Goofy Chatbox (Global Lounge)")
+    st.write("Chat live with other members active on the site!")
 
-# --- PAGE 1: GOOFY CHATBOX ---
-if page == "🤖 Goofy Chatbox":
-    st.header("🤖 Goofy Chatbox")
-    st.write("Chat with the Goofy Gang AI bot below!")
+    if st.button("🔄 Refresh Messages"):
+        st.rerun()
 
-    for msg in st.session_state["chat_history"]:
-        with st.chat_message(msg["role"]):
-            st.write(msg["content"])
+    # Display shared messages
+    chat_container = st.container()
+    with chat_container:
+        if not global_chat:
+            st.info("No messages yet! Be the first to speak.")
+        for msg in global_chat:
+            with st.chat_message("user" if msg["sender"] == st.session_state["nickname"] else "assistant"):
+                st.markdown(f"**{msg['sender']}** *({msg['time']})*")
+                st.write(msg["text"])
 
-    user_input = st.chat_input("Say something goofy...")
-    if user_input:
-        st.session_state["chat_history"].append({"role": "user", "content": user_input})
-        bot_response = f"🤪 **{st.session_state['nickname']}** said: '{user_input}'! That is totally goofy!"
-        st.session_state["chat_history"].append({"role": "assistant", "content": bot_response})
+    # Message Input
+    user_msg = st.chat_input("Type a message to the gang...")
+    if user_msg:
+        time_str = datetime.now().strftime("%I:%M %p")
+        global_chat.append({
+            "sender": st.session_state["nickname"],
+            "text": user_msg,
+            "time": time_str
+        })
         st.rerun()
 
 # --- PAGE 2: GUESSING GAME ---
 elif page == "🎲 Guessing Game":
     st.header("🎲 Number Guessing Game")
     st.write("Guess the secret number between 1 and 100!")
-
-    import random
 
     if "secret_num" not in st.session_state:
         st.session_state["secret_num"] = random.randint(1, 100)
@@ -74,11 +116,12 @@ elif page == "🎲 Guessing Game":
             st.warning("Too high! Try again.")
         else:
             st.balloons()
-            st.success(f"🎉 You got it in {st.session_state['guesses']} tries! The number was {st.session_state['secret_num']}.")
-            if st.button("Play Again"):
-                del st.session_state["secret_num"]
-                del st.session_state["guesses"]
-                st.rerun()
+            st.success(f"🎉 You got it in {st.session_state['guesses']} tries! The secret number was {st.session_state['secret_num']}.")
+
+    if st.button("New Game"):
+        st.session_state["secret_num"] = random.randint(1, 100)
+        st.session_state["guesses"] = 0
+        st.rerun()
 
 # --- PAGE 3: TIC-TAC-TOE ---
 elif page == "❌ Tic-Tac-Toe":
@@ -91,8 +134,8 @@ elif page == "❌ Tic-Tac-Toe":
     cols = st.columns(3)
     for i in range(9):
         with cols[i % 3]:
-            label = st.session_state["board"][i] if st.session_state["board"][i] != "" else " "
-            if st.button(label, key=f"btn_{i}", use_container_width=True):
+            btn_label = st.session_state["board"][i] if st.session_state["board"][i] != "" else " "
+            if st.button(btn_label, key=f"ttt_{i}", use_container_width=True):
                 if st.session_state["board"][i] == "":
                     st.session_state["board"][i] = st.session_state["turn"]
                     st.session_state["turn"] = "⭕" if st.session_state["turn"] == "❌" else "❌"
@@ -106,12 +149,11 @@ elif page == "❌ Tic-Tac-Toe":
 # --- PAGE 4: ROCK PAPER SCISSORS ---
 elif page == "🪨 Rock Paper Scissors":
     st.header("🪨 Rock Paper Scissors")
-    import random
 
     choices = ["🪨 Rock", "📄 Paper", "✂️ Scissors"]
-    user_choice = st.radio("Choose your weapon:", choices)
+    user_choice = st.radio("Choose your move:", choices)
 
-    if st.button("Play"):
+    if st.button("Play Turn"):
         bot_choice = random.choice(choices)
         st.write(f"**Bot chose:** {bot_choice}")
 
@@ -124,12 +166,12 @@ elif page == "🪨 Rock Paper Scissors":
         ):
             st.success("🎉 You win!")
         else:
-            st.error(" You lost! Try again.")
+            st.error(" You lose! Try again.")
 
 # --- PAGE 5: ANIMATED ASTEROID DODGE ---
 elif page == "🚀 Asteroid Dodge":
     st.header("🚀 Asteroid Dodge (Arcade Edition)")
-    st.write("Dodge the falling asteroids in real-time!")
+    st.write("Dodge the falling space debris in real-time!")
 
     asteroid_game_html = """
     <!DOCTYPE html>
@@ -161,7 +203,7 @@ elif page == "🚀 Asteroid Dodge":
     <body>
 
       <canvas id="gameCanvas" width="600" height="400"></canvas>
-      <div class="info">Use <b>Left / Right Arrows</b> or <b>A / D</b> to move your ship. Press <b>R</b> to restart.</div>
+      <div class="info">Click screen once, then use <b>Left / Right Arrows</b> or <b>A / D</b> to move. Press <b>R</b> to restart.</div>
 
       <script>
         const canvas = document.getElementById("gameCanvas");
@@ -252,7 +294,7 @@ elif page == "🚀 Asteroid Dodge":
         function draw() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Ship
+          // Draw Ship
           ctx.fillStyle = "#ff4b4b";
           ctx.beginPath();
           ctx.moveTo(player.x + player.width / 2, player.y);
@@ -261,7 +303,7 @@ elif page == "🚀 Asteroid Dodge":
           ctx.closePath();
           ctx.fill();
 
-          // Asteroids
+          // Draw Asteroids
           ctx.fillStyle = "#8b949e";
           asteroids.forEach(a => {
             ctx.beginPath();
@@ -269,7 +311,7 @@ elif page == "🚀 Asteroid Dodge":
             ctx.fill();
           });
 
-          // Score
+          // Draw Score
           ctx.fillStyle = "#ffffff";
           ctx.font = "16px sans-serif";
           ctx.fillText("Score: " + score, 15, 25);
@@ -304,4 +346,4 @@ elif page == "🚀 Asteroid Dodge":
     </body>
     </html>
     """
-    components.html(asteroid_game_html, height=500)
+    components.html(asteroid_game_html, height=520)
