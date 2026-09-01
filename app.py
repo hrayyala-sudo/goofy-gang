@@ -237,7 +237,7 @@ elif page == "🚀 Asteroid Dodge":
     <body>
 
       <canvas id="gameCanvas" width="600" height="400"></canvas>
-      <div class="info">Click screen once, then use <b>Arrow Keys</b> or <b>A / D / W / S</b> to move. Press <b>R</b> to restart.</div>
+      <div class="info">Click screen once, then use <b>Left / Right Arrow Keys</b> or <b>A / D</b> to move side to side. Press <b>R</b> to restart.</div>
 
       <script>
         const canvas = document.getElementById("gameCanvas");
@@ -262,7 +262,7 @@ elif page == "🚀 Asteroid Dodge":
 
         document.addEventListener("keydown", (e) => {
           // Prevent default scrolling behavior for Arrow Keys
-          if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+          if (["ArrowLeft", "ArrowRight"].includes(e.key)) {
             e.preventDefault();
           }
           keys[e.key] = true;
@@ -294,7 +294,7 @@ elif page == "🚀 Asteroid Dodge":
         function update() {
           if (gameOver) return;
 
-          // Horizontal movement
+          // Side-to-side movement only
           if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
             player.x -= player.speed;
           }
@@ -302,19 +302,9 @@ elif page == "🚀 Asteroid Dodge":
             player.x += player.speed;
           }
 
-          // Vertical movement
-          if (keys["ArrowUp"] || keys["w"] || keys["W"]) {
-            player.y -= player.speed;
-          }
-          if (keys["ArrowDown"] || keys["s"] || keys["S"]) {
-            player.y += player.speed;
-          }
-
-          // Screen boundaries
+          // Screen boundaries for horizontal movement
           if (player.x < 0) player.x = 0;
           if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
-          if (player.y < 0) player.y = 0;
-          if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
 
           frameCount++;
           if (frameCount % spawnRate === 0) {
