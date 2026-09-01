@@ -23,13 +23,13 @@ def get_global_chat():
 
 global_chat = get_global_chat()
 
-# --- 3. CENTERED COMPACT LOGIN SYSTEM ---
+# --- 3. CENTERED COMPACT LOGIN SYSTEM WITH SILLY FACE ---
 def show_login_screen():
     # Use columns to center and constrain width
     _, center_col, _ = st.columns([1, 1, 1])
     
     with center_col:
-        st.title("🔒 Goofy Gang Portal Login")
+        st.title("🤪 Goofy Gang Portal Login")
         st.caption("Please sign in to access the portal.")
 
         user_input = st.text_input("Enter Your Name:", key="login_name")
