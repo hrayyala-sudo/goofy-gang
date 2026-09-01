@@ -4,7 +4,7 @@ import random
 from datetime import datetime
 
 # --- 1. PAGE SETUP ---
-st.set_page_config(page_title="Goofy Gang Portal", page_icon="🎉", layout="wide")
+st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="wide")
 
 # Allowed Users & Password
 ALLOWED_USERS = ["Pranav", "Calvin", "Austin", "Goofy Member"]
@@ -23,9 +23,8 @@ def get_global_chat():
 
 global_chat = get_global_chat()
 
-# --- 3. CENTERED COMPACT LOGIN SYSTEM WITH SILLY FACE ---
+# --- 3. CENTERED COMPACT LOGIN SYSTEM ---
 def show_login_screen():
-    # Use columns to center and constrain width
     _, center_col, _ = st.columns([1, 1, 1])
     
     with center_col:
@@ -74,7 +73,7 @@ if st.sidebar.button("Logout"):
     st.rerun()
 
 # --- 5. MAIN DASHBOARD ---
-st.title("🎉 Goofy Gang Dashboard")
+st.title("🤪 Goofy Gang Dashboard")
 st.markdown("---")
 
 # --- PAGE 1: GOOFY CHATBOX ---
@@ -84,6 +83,33 @@ if page == "💬 Goofy Chatbox":
 
     if st.button("🔄 Refresh Messages"):
         st.rerun()
+
+    # --- CALVIN MODERATION CONTROLS ---
+    if st.session_state["nickname"].lower() == "calvin":
+        with st.expander("👑 Calvin's Admin Chat Controls", expanded=True):
+            st.write("Manage chat messages below:")
+            
+            if global_chat:
+                col_del_spec, col_del_all = st.columns([2, 1])
+                
+                with col_del_spec:
+                    options = [f"[{i}] {m['sender']}: {m['text'][:30]}..." for i, m in enumerate(global_chat)]
+                    selected_msg = st.selectbox("Select message to delete:", options, key="admin_del_select")
+                    if st.button("Delete Selected Message"):
+                        idx = int(selected_msg.split("]")[0].replace("[", ""))
+                        del global_chat[idx]
+                        st.success("Message deleted!")
+                        st.rerun()
+
+                with col_del_all:
+                    st.write("")
+                    st.write("")
+                    if st.button("Delete ALL Messages", type="primary"):
+                        global_chat.clear()
+                        st.success("All chat messages cleared!")
+                        st.rerun()
+            else:
+                st.caption("No active messages to moderate.")
 
     chat_container = st.container()
     with chat_container:
@@ -122,7 +148,7 @@ elif page == "🎲 Guessing Game":
             st.warning("Too high! Try again.")
         else:
             st.balloons()
-            st.success(f"🎉 You got it in {st.session_state['guesses']} tries! The secret number was {st.session_state['secret_num']}.")
+            st.success(f"You got it in {st.session_state['guesses']} tries! The secret number was {st.session_state['secret_num']}.")
 
     if st.button("New Game"):
         st.session_state["secret_num"] = random.randint(1, 100)
@@ -170,9 +196,9 @@ elif page == "🪨 Rock Paper Scissors":
             or (user_choice == "📄 Paper" and bot_choice == "🪨 Rock")
             or (user_choice == "✂️ Scissors" and bot_choice == "📄 Paper")
         ):
-            st.success("🎉 You win!")
+            st.success("You win!")
         else:
-            st.error(" You lose! Try again.")
+            st.error("You lose! Try again.")
 
 # --- PAGE 5: ANIMATED ASTEROID DODGE ---
 elif page == "🚀 Asteroid Dodge":
