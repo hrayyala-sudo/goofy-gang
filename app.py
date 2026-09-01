@@ -6,8 +6,8 @@ from datetime import datetime
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="wide")
 
-# Allowed Users & Password
-ALLOWED_USERS = ["Pranav", "Calvin", "Austin", "Goofy Member"]
+# Allowed Users (Stored in lowercase for easy matching) & Password
+ALLOWED_USERS = ["pranav", "calvin", "austin", "goofy member"]
 CORRECT_PASSWORD = "goofy123"
 
 # Initialize Session State
@@ -35,12 +35,14 @@ def show_login_screen():
         pass_input = st.text_input("Enter Password:", type="password", key="login_pass")
 
         if st.button("Login", use_container_width=True):
-            if user_input.strip() in ALLOWED_USERS and pass_input == CORRECT_PASSWORD:
+            clean_username = user_input.strip().lower()
+            if clean_username in ALLOWED_USERS and pass_input == CORRECT_PASSWORD:
                 st.session_state["logged_in"] = True
+                # Preserve user's typed name format for display
                 st.session_state["nickname"] = user_input.strip()
-                st.success(f"Welcome, {user_input}!")
+                st.success(f"Welcome, {user_input.strip()}!")
                 st.rerun()
-            elif user_input.strip() not in ALLOWED_USERS:
+            elif clean_username not in ALLOWED_USERS:
                 st.error("Name not recognized! Please enter an authorized name.")
             else:
                 st.error("Incorrect password!")
@@ -84,8 +86,8 @@ if page == "💬 Goofy Chatbox":
     if st.button("🔄 Refresh Messages"):
         st.rerun()
 
-    # --- CALVIN MODERATION CONTROLS ---
-    if st.session_state["nickname"].lower() == "calvin":
+    # --- CALVIN MODERATION CONTROLS (Case-Insensitive Check) ---
+    if st.session_state["nickname"].strip().lower() == "calvin":
         with st.expander("👑 Calvin's Admin Chat Controls", expanded=True):
             st.write("Manage chat messages below:")
             
@@ -116,7 +118,7 @@ if page == "💬 Goofy Chatbox":
         if not global_chat:
             st.info("No messages yet! Be the first to speak.")
         for msg in global_chat:
-            with st.chat_message("user" if msg["sender"] == st.session_state["nickname"] else "assistant"):
+            with st.chat_message("user" if msg["sender"].lower() == st.session_state["nickname"].lower() else "assistant"):
                 st.markdown(f"**{msg['sender']}** *({msg['time']})*")
                 st.write(msg["text"])
 
@@ -235,7 +237,7 @@ elif page == "🚀 Asteroid Dodge":
     <body>
 
       <canvas id="gameCanvas" width="600" height="400"></canvas>
-      <div class="info">Click screen once, then use <b>Left / Right Arrows</b> or <b>A / D</b> to move. Press <b>R</b> to restart.</div>
+      <div class="info">Click screen once, then use <b>Arrow Keys</b> or <b>A / D / W / S</b> to move. Press <b>R</b> to restart.</div>
 
       <script>
         const canvas = document.getElementById("gameCanvas");
@@ -259,6 +261,10 @@ elif page == "🚀 Asteroid Dodge":
         const keys = {};
 
         document.addEventListener("keydown", (e) => {
+          // Prevent default scrolling behavior for Arrow Keys
+          if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+            e.preventDefault();
+          }
           keys[e.key] = true;
           if (gameOver && (e.key === "r" || e.key === "R")) {
             resetGame();
@@ -280,6 +286,7 @@ elif page == "🚀 Asteroid Dodge":
           score = 0;
           asteroids = [];
           player.x = canvas.width / 2 - 15;
+          player.y = canvas.height - 40;
           gameOver = false;
           loop();
         }
@@ -287,6 +294,7 @@ elif page == "🚀 Asteroid Dodge":
         function update() {
           if (gameOver) return;
 
+          // Horizontal movement
           if (keys["ArrowLeft"] || keys["a"] || keys["A"]) {
             player.x -= player.speed;
           }
@@ -294,8 +302,19 @@ elif page == "🚀 Asteroid Dodge":
             player.x += player.speed;
           }
 
+          // Vertical movement
+          if (keys["ArrowUp"] || keys["w"] || keys["W"]) {
+            player.y -= player.speed;
+          }
+          if (keys["ArrowDown"] || keys["s"] || keys["S"]) {
+            player.y += player.speed;
+          }
+
+          // Screen boundaries
           if (player.x < 0) player.x = 0;
           if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+          if (player.y < 0) player.y = 0;
+          if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
 
           frameCount++;
           if (frameCount % spawnRate === 0) {
