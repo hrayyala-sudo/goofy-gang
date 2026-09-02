@@ -86,7 +86,7 @@ if page == "💬 Goofy Chatbox":
     if st.button("🔄 Refresh Messages"):
         st.rerun()
 
-    # --- CALVIN MODERATION CONTROLS (Case-Insensitive Check) ---
+    # --- CALVIN MODERATION CONTROLS ---
     if st.session_state["nickname"].strip().lower() == "calvin":
         with st.expander("👑 Calvin's Admin Chat Controls", expanded=True):
             st.write("Manage chat messages below:")
@@ -299,7 +299,7 @@ elif page == "🚀 Asteroid Dodge":
 
 # --- PAGE 6: AUTHENTIC PAC-MAN ARCADE ---
 elif page == "🟡 Pac-Man":
-    st.header("🟡 Pac-Man Authentic Arcade Edition")
+    st.header("🟡 Pac-Man Ultra-Smooth Arcade Edition")
     st.write("Chomp dots, grab Power Pellets, turn the tables on ghosts, and escape through the side tunnels!")
 
     pacman_html = """
@@ -325,7 +325,6 @@ elif page == "🟡 Pac-Man":
         const rows = 15;
         const cols = 19;
 
-        // Map Legend: 1=Wall, 0=Dot, 3=Power Pellet, 2=Path/Empty, 4=Ghost Gate
         const initialMap = [
           [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
           [1,3,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,3,1],
@@ -333,7 +332,7 @@ elif page == "🟡 Pac-Man":
           [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
           [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
           [1,0,1,1,0,1,0,1,1,4,1,1,0,1,0,1,1,0,1],
-          [2,0,2,2,0,1,0,1,2,2,2,1,0,1,0,2,2,0,2], // Side Tunnel Row
+          [2,0,2,2,0,1,0,1,2,2,2,1,0,1,0,2,2,0,2],
           [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
           [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
           [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
@@ -352,17 +351,19 @@ elif page == "🟡 Pac-Man":
         let mouthAngle = 0.2;
         let mouthOpening = true;
 
-        // Countdown variables
         let countdown = 3;
         let countdownActive = true;
 
-        let pacman = { x: 9, y: 10, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, angle: 0 };
+        // Smooth pixel-based movement speed
+        const speed = 2.5; 
+        const ghostSpeed = 2.0;
+
+        let pacman = { x: 9 * tileSize + 15, y: 10 * tileSize + 15, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, angle: 0 };
         let ghosts = [];
 
         function startCountdown() {
           countdown = 3;
           countdownActive = true;
-          
           let interval = setInterval(() => {
             countdown--;
             if (countdown < 0) {
@@ -378,13 +379,13 @@ elif page == "🟡 Pac-Man":
           gameWon = false;
           scaredTimer = 0;
           map = JSON.parse(JSON.stringify(initialMap));
-          pacman = { x: 9, y: 10, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, angle: 0 };
+          pacman = { x: 9 * tileSize + 15, y: 10 * tileSize + 15, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, angle: 0 };
           
           ghosts = [
-            { name: "Blinky", x: 9, y: 5, color: "#ff0000", dirX: 1, dirY: 0, type: "chase" },
-            { name: "Pinky", x: 8, y: 6, color: "#ffb8ff", dirX: -1, dirY: 0, type: "ambush" },
-            { name: "Inky", x: 9, y: 6, color: "#00ffff", dirX: 0, dirY: -1, type: "random" },
-            { name: "Clyde", x: 10, y: 6, color: "#ffb852", dirX: 0, dirY: -1, type: "shy" }
+            { name: "Blinky", x: 9 * tileSize + 15, y: 5 * tileSize + 15, color: "#ff0000", dirX: 1, dirY: 0, type: "chase" },
+            { name: "Pinky", x: 8 * tileSize + 15, y: 6 * tileSize + 15, color: "#ffb8ff", dirX: -1, dirY: 0, type: "ambush" },
+            { name: "Inky", x: 9 * tileSize + 15, y: 6 * tileSize + 15, color: "#00ffff", dirX: 0, dirY: -1, type: "random" },
+            { name: "Clyde", x: 10 * tileSize + 15, y: 6 * tileSize + 15, color: "#ffb852", dirX: 0, dirY: -1, type: "shy" }
           ];
 
           startCountdown();
@@ -394,13 +395,13 @@ elif page == "🟡 Pac-Man":
           if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
 
           if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
-            pacman.nextDirX = -1; pacman.nextDirY = 0; pacman.angle = Math.PI;
+            pacman.nextDirX = -1; pacman.nextDirY = 0;
           } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
-            pacman.nextDirX = 1; pacman.nextDirY = 0; pacman.angle = 0;
+            pacman.nextDirX = 1; pacman.nextDirY = 0;
           } else if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
-            pacman.nextDirX = 0; pacman.nextDirY = -1; pacman.angle = 1.5 * Math.PI;
+            pacman.nextDirX = 0; pacman.nextDirY = -1;
           } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
-            pacman.nextDirX = 0; pacman.nextDirY = 1; pacman.angle = 0.5 * Math.PI;
+            pacman.nextDirX = 0; pacman.nextDirY = 1;
           }
 
           if ((gameOver || gameWon) && (e.key === "r" || e.key === "R")) {
@@ -408,10 +409,25 @@ elif page == "🟡 Pac-Man":
           }
         });
 
-        function isWall(gx, gy) {
-          if (gy === 6 && (gx < 0 || gx >= cols)) return false; // Tunnel
+        function isWallPixel(px, py) {
+          let gx = Math.floor(px / tileSize);
+          let gy = Math.floor(py / tileSize);
+          if (gy === 6 && (gx < 0 || gx >= cols)) return false; // Side tunnel
           if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return true;
           return map[gy][gx] === 1 || map[gy][gx] === 4;
+        }
+
+        function canMovePixel(x, y, dx, dy, radius) {
+          let nextX = x + dx * speed;
+          let nextY = y + dy * speed;
+
+          // Check bounding box corners around circle
+          return !(
+            isWallPixel(nextX - radius, nextY - radius) ||
+            isWallPixel(nextX + radius, nextY - radius) ||
+            isWallPixel(nextX - radius, nextY + radius) ||
+            isWallPixel(nextX + radius, nextY + radius)
+          );
         }
 
         function checkDotsRemaining() {
@@ -426,88 +442,130 @@ elif page == "🟡 Pac-Man":
         function update() {
           if (gameOver || gameWon || countdownActive) return;
 
-          // Mouth Animation
+          // Smooth Mouth Animation
           if (mouthOpening) {
-            mouthAngle += 0.04;
+            mouthAngle += 0.02;
             if (mouthAngle >= 0.25) mouthOpening = false;
           } else {
-            mouthAngle -= 0.04;
-            if (mouthAngle <= 0.02) mouthOpening = true;
+            mouthAngle -= 0.02;
+            if (mouthAngle <= 0.01) mouthOpening = true;
           }
 
-          if (scaredTimer > 0) scaredTimer--;
+          if (scaredTimer > 0) scaredTimer -= 0.02;
 
-          // Turn Pac-Man
-          if (!isWall(pacman.x + pacman.nextDirX, pacman.y + pacman.nextDirY)) {
-            pacman.dirX = pacman.nextDirX;
-            pacman.dirY = pacman.nextDirY;
+          // Cornering & Turning Check
+          let radius = 12;
+          let gridX = Math.floor(pacman.x / tileSize) * tileSize + 15;
+          let gridY = Math.floor(pacman.y / tileSize) * tileSize + 15;
+
+          // Align with tile center for smooth turns
+          if (pacman.nextDirX !== 0 || pacman.nextDirY !== 0) {
+            if (canMovePixel(pacman.x, pacman.y, pacman.nextDirX, pacman.nextDirY, radius)) {
+              if (pacman.nextDirX !== 0 && Math.abs(pacman.y - gridY) < 8) {
+                pacman.y = gridY;
+                pacman.dirX = pacman.nextDirX;
+                pacman.dirY = 0;
+              } else if (pacman.nextDirY !== 0 && Math.abs(pacman.x - gridX) < 8) {
+                pacman.x = gridX;
+                pacman.dirX = 0;
+                pacman.dirY = pacman.nextDirY;
+              }
+            }
           }
 
-          // Move Pac-Man
-          if (!isWall(pacman.x + pacman.dirX, pacman.y + pacman.dirY)) {
-            pacman.x += pacman.dirX;
-            pacman.y += pacman.dirY;
+          // Move Pacman
+          if (canMovePixel(pacman.x, pacman.y, pacman.dirX, pacman.dirY, radius)) {
+            pacman.x += pacman.dirX * speed;
+            pacman.y += pacman.dirY * speed;
 
-            if (pacman.x < 0) pacman.x = cols - 1;
-            else if (pacman.x >= cols) pacman.x = 0;
+            // Set rotation angle
+            if (pacman.dirX === 1) pacman.angle = 0;
+            else if (pacman.dirX === -1) pacman.angle = Math.PI;
+            else if (pacman.dirY === -1) pacman.angle = 1.5 * Math.PI;
+            else if (pacman.dirY === 1) pacman.angle = 0.5 * Math.PI;
+
+            // Side tunnel wrap
+            if (pacman.x < 0) pacman.x = cols * tileSize - 15;
+            else if (pacman.x > cols * tileSize) pacman.x = 15;
           }
 
-          // Eat Dot
-          if (map[pacman.y] && map[pacman.y][pacman.x] === 0) {
-            map[pacman.y][pacman.x] = 2;
+          // Tile interactions
+          let tileGX = Math.floor(pacman.x / tileSize);
+          let tileGY = Math.floor(pacman.y / tileSize);
+
+          if (map[tileGY] && map[tileGY][tileGX] === 0) {
+            map[tileGY][tileGX] = 2;
             score += 10;
             if (!checkDotsRemaining()) gameWon = true;
-          } 
-          // Eat Power Pellet
-          else if (map[pacman.y] && map[pacman.y][pacman.x] === 3) {
-            map[pacman.y][pacman.x] = 2;
+          } else if (map[tileGY] && map[tileGY][tileGX] === 3) {
+            map[tileGY][tileGX] = 2;
             score += 50;
-            scaredTimer = 40;
+            scaredTimer = 8; // 8 seconds
             if (!checkDotsRemaining()) gameWon = true;
           }
 
-          // Ghosts AI
+          // Update Ghosts
           ghosts.forEach(g => {
-            let possibleDirs = [
-              { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
-            ].filter(d => {
-              let nx = g.x + d.x, ny = g.y + d.y;
-              if (ny === 6 && (nx < 0 || nx >= cols)) return true;
-              return nx >= 0 && nx < cols && ny >= 0 && ny < rows && map[ny][nx] !== 1;
-            });
+            let gGX = Math.floor(g.x / tileSize);
+            let gGY = Math.floor(g.y / tileSize);
+            let gCenterX = gGX * tileSize + 15;
+            let gCenterY = gGY * tileSize + 15;
 
-            if (possibleDirs.length > 0) {
+            // Change direction at grid intersections
+            if (Math.abs(g.x - gCenterX) < 2 && Math.abs(g.y - gCenterY) < 2) {
+              g.x = gCenterX;
+              g.y = gCenterY;
+
+              let possibleDirs = [
+                { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
+              ].filter(d => {
+                // Don't reverse back immediately unless dead end
+                if (d.x === -g.dirX && d.y === -g.dirY) return false;
+                let nx = gGX + d.x, ny = gGY + d.y;
+                if (ny === 6 && (nx < 0 || nx >= cols)) return true;
+                return nx >= 0 && nx < cols && ny >= 0 && ny < rows && map[ny][nx] !== 1;
+              });
+
+              if (possibleDirs.length === 0) {
+                possibleDirs = [{ x: -g.dirX, y: -g.dirY }];
+              }
+
               let targetX = pacman.x, targetY = pacman.y;
-
               if (scaredTimer > 0) {
-                targetX = cols - pacman.x;
-                targetY = rows - pacman.y;
+                targetX = cols * tileSize - pacman.x;
+                targetY = rows * tileSize - pacman.y;
               } else if (g.type === "ambush") {
-                targetX = pacman.x + pacman.dirX * 3;
-                targetY = pacman.y + pacman.dirY * 3;
+                targetX = pacman.x + pacman.dirX * 60;
+                targetY = pacman.y + pacman.dirY * 60;
               } else if (g.type === "random") {
-                targetX = Math.floor(Math.random() * cols);
-                targetY = Math.floor(Math.random() * rows);
+                targetX = Math.random() * canvas.width;
+                targetY = Math.random() * canvas.height;
               }
 
               possibleDirs.sort((a, b) => {
-                let distA = Math.hypot((g.x + a.x) - targetX, (g.y + a.y) - targetY);
-                let distB = Math.hypot((g.x + b.x) - targetX, (g.y + b.y) - targetY);
+                let distA = Math.hypot((g.x + a.x * tileSize) - targetX, (g.y + a.y * tileSize) - targetY);
+                let distB = Math.hypot((g.x + b.x * tileSize) - targetX, (g.y + b.y * tileSize) - targetY);
                 return distA - distB;
               });
 
-              let chosen = possibleDirs[0];
-              g.dirX = chosen.x; g.dirY = chosen.y;
-              g.x += g.dirX; g.y += g.dirY;
-
-              if (g.x < 0) g.x = cols - 1;
-              else if (g.x >= cols) g.x = 0;
+              g.dirX = possibleDirs[0].x;
+              g.dirY = possibleDirs[0].y;
             }
 
-            if (g.x === pacman.x && g.y === pacman.y) {
+            let currentGhostSpeed = scaredTimer > 0 ? ghostSpeed * 0.6 : ghostSpeed;
+            g.x += g.dirX * currentGhostSpeed;
+            g.y += g.dirY * currentGhostSpeed;
+
+            if (g.x < 0) g.x = cols * tileSize - 15;
+            else if (g.x > cols * tileSize) g.x = 15;
+
+            // Collision check
+            let distToPacman = Math.hypot(g.x - pacman.x, g.y - pacman.y);
+            if (distToPacman < 18) {
               if (scaredTimer > 0) {
                 score += 200;
-                g.x = 9; g.y = 6;
+                g.x = 9 * tileSize + 15;
+                g.y = 6 * tileSize + 15;
               } else {
                 gameOver = true;
               }
@@ -518,7 +576,7 @@ elif page == "🟡 Pac-Man":
         function draw() {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Draw Map
+          // Draw Map Layout
           for (let r = 0; r < rows; r++) {
             for (let c = 0; c < cols; c++) {
               let cell = map[r][c];
@@ -544,48 +602,44 @@ elif page == "🟡 Pac-Man":
             }
           }
 
-          // Draw Pac-Man
-          let pxX = pacman.x * tileSize + tileSize / 2;
-          let pxY = pacman.y * tileSize + tileSize / 2;
+          // Draw Smooth Pac-Man
           ctx.fillStyle = "#ffff00";
           ctx.beginPath();
-          ctx.arc(pxX, pxY, tileSize / 2 - 2, pacman.angle + mouthAngle * Math.PI, pacman.angle + (2 - mouthAngle) * Math.PI);
-          ctx.lineTo(pxX, pxY);
+          ctx.arc(pacman.x, pacman.y, tileSize / 2 - 2, pacman.angle + mouthAngle * Math.PI, pacman.angle + (2 - mouthAngle) * Math.PI);
+          ctx.lineTo(pacman.x, pacman.y);
           ctx.fill();
 
-          // Draw Ghosts
+          // Draw Smooth Ghosts
           ghosts.forEach(g => {
-            let gx = g.x * tileSize + tileSize / 2;
-            let gy = g.y * tileSize + tileSize / 2;
-
             if (scaredTimer > 0) {
-              ctx.fillStyle = (scaredTimer < 10 && scaredTimer % 2 === 0) ? "#ffffff" : "#2121ff";
+              ctx.fillStyle = (scaredTimer < 2 && Math.floor(Date.now() / 150) % 2 === 0) ? "#ffffff" : "#2121ff";
             } else {
               ctx.fillStyle = g.color;
             }
 
             ctx.beginPath();
-            ctx.arc(gx, gy - 2, tileSize / 2 - 2, Math.PI, 0, false);
-            ctx.lineTo(gx + tileSize / 2 - 2, gy + tileSize / 2 - 2);
-            ctx.lineTo(gx, gy + tileSize / 2 - 6);
-            ctx.lineTo(gx - tileSize / 2 + 2, gy + tileSize / 2 - 2);
+            ctx.arc(g.x, g.y - 2, tileSize / 2 - 2, Math.PI, 0, false);
+            ctx.lineTo(g.x + tileSize / 2 - 2, g.y + tileSize / 2 - 2);
+            ctx.lineTo(g.x, g.y + tileSize / 2 - 6);
+            ctx.lineTo(g.x - tileSize / 2 + 2, g.y + tileSize / 2 - 2);
             ctx.closePath();
             ctx.fill();
 
+            // Eyes
             ctx.fillStyle = "#ffffff";
             ctx.beginPath();
-            ctx.arc(gx - 4, gy - 3, 3, 0, Math.PI * 2);
-            ctx.arc(gx + 4, gy - 3, 3, 0, Math.PI * 2);
+            ctx.arc(g.x - 4, g.y - 3, 3, 0, Math.PI * 2);
+            ctx.arc(g.x + 4, g.y - 3, 3, 0, Math.PI * 2);
             ctx.fill();
 
             ctx.fillStyle = scaredTimer > 0 ? "#ffb8ae" : "#000000";
             ctx.beginPath();
-            ctx.arc(gx - 4 + g.dirX, gy - 3 + g.dirY, 1.5, 0, Math.PI * 2);
-            ctx.arc(gx + 4 + g.dirX, gy - 3 + g.dirY, 1.5, 0, Math.PI * 2);
+            ctx.arc(g.x - 4 + g.dirX * 1.5, g.y - 3 + g.dirY * 1.5, 1.5, 0, Math.PI * 2);
+            ctx.arc(g.x + 4 + g.dirX * 1.5, g.y - 3 + g.dirY * 1.5, 1.5, 0, Math.PI * 2);
             ctx.fill();
           });
 
-          // Draw Score Overlay
+          // HUD
           ctx.fillStyle = "#ffffff";
           ctx.font = "bold 16px 'Courier New', Courier, monospace";
           ctx.fillText("1UP SCORE", 20, 435);
@@ -638,13 +692,14 @@ elif page == "🟡 Pac-Man":
           }
         }
 
-        function loop() {
+        function gameLoop() {
           update();
           draw();
+          requestAnimationFrame(gameLoop);
         }
 
         initGame();
-        setInterval(loop, 130);
+        requestAnimationFrame(gameLoop);
       </script>
     </body>
     </html>
