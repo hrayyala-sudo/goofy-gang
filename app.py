@@ -415,9 +415,9 @@ if page == "💬 Goofy Chatbox":
     if st.button("🔄 Refresh Messages"):
         st.rerun()
 
-    # --- PRANAV'S ADMIN CONTROLS ---
-    if st.session_state["nickname"].strip().lower() == "pranav":
-        with st.expander("👑 Pranav's Admin Chat Controls", expanded=True):
+    # --- CALVIN MODERATION CONTROLS ---
+    if st.session_state["nickname"].strip().lower() == "calvin":
+        with st.expander("👑 Calvin's Admin Chat Controls", expanded=True):
             st.write("Manage chat messages below:")
             
             if global_chat:
