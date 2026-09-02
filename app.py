@@ -415,9 +415,9 @@ if page == "💬 Goofy Chatbox":
     if st.button("🔄 Refresh Messages"):
         st.rerun()
 
-    # --- CALVIN MODERATION CONTROLS ---
-    if st.session_state["nickname"].strip().lower() == "calvin":
-        with st.expander("👑 Calvin's Admin Chat Controls", expanded=True):
+    # --- PRANAV'S ADMIN CONTROLS ---
+    if st.session_state["nickname"].strip().lower() == "pranav":
+        with st.expander("👑 Pranav's Admin Chat Controls", expanded=True):
             st.write("Manage chat messages below:")
             
             if global_chat:
@@ -1016,10 +1016,10 @@ elif page == "🟡 Pac-Man":
 
 # --- PAGE 7: FEATURE REQUESTS ---
 elif page == "💡 Feature Requests":
-    is_calvin = st.session_state["nickname"].strip().lower() == "calvin"
+    is_pranav = st.session_state["nickname"].strip().lower() == "pranav"
     
-    if is_calvin:
-        st.header("👑 Calvin's Feature Request Dashboard")
+    if is_pranav:
+        st.header("👑 Pranav's Feature Request Dashboard")
         st.write("Here are all the features requested by the gang:")
         
         if not st.session_state["feature_requests"]:
@@ -1034,7 +1034,7 @@ elif page == "💡 Feature Requests":
                         st.rerun()
     else:
         st.header("💡 Request a Feature")
-        st.write("Got a cool idea for the Goofy Gang Portal? Let Calvin know below!")
+        st.write("Got a cool idea for the Goofy Gang Portal? Let Pranav know below!")
         
         with st.form("feature_form", clear_on_submit=True):
             user_request = st.text_area("What feature would you like to see added?")
@@ -1048,6 +1048,6 @@ elif page == "💡 Feature Requests":
                         "text": user_request.strip(),
                         "time": time_str
                     })
-                    st.success("Your feature request has been sent straight to Calvin!")
+                    st.success("Your feature request has been sent straight to Pranav!")
                 else:
                     st.warning("Please type something before submitting.")
