@@ -80,9 +80,197 @@ st.markdown("---")
 
 # --- PAGE 1: GOOFY CHATBOX ---
 if page == "💬 Goofy Chatbox":
-    # Custom CSS to turn the secret button into a giant, seamless top-right logo
     st.markdown("""
     <style>
         .element-container:has(div.secret-logo-wrapper) {
             position: absolute;
-            top
+            top: 0;
+            right: 10px;
+            z-index: 999;
+        }
+        div.secret-logo-wrapper > button {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-size: 85px !important;
+            cursor: pointer;
+            padding: 0 !important;
+            margin: 0 !important;
+            line-height: 1 !important;
+            transition: transform 0.2s ease;
+        }
+        div.secret-logo-wrapper > button:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+        div.secret-logo-wrapper > button:active {
+            transform: scale(0.95);
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    header_col, logo_col = st.columns([5, 1])
+
+    with header_col:
+        st.header("💬 Goofy Chatbox")
+        st.write("Welcome to the main chat room! Messages update for everyone.")
+
+    with logo_col:
+        st.markdown('<div class="secret-logo-wrapper">', unsafe_allow_html=True)
+        if st.button("🤪", key="secret_chat_logo"):
+            st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    # --- SECRET GOOFY BOSS GAME OVERLAY ---
+    if st.session_state["show_secret_game"]:
+        st.info("🎉 **SECRET UNLOCKED!** You tapped the giant Goofy Gang icon!")
+        
+        secret_game_html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body {
+              background-color: #161b22;
+              color: white;
+              font-family: Arial, sans-serif;
+              text-align: center;
+              margin: 0;
+              padding: 15px;
+              border: 3px dashed #ff4b4b;
+              border-radius: 12px;
+            }
+            .boss-target {
+              font-size: 80px;
+              cursor: pointer;
+              user-select: none;
+              display: inline-block;
+              transition: transform 0.05s ease;
+              margin: 15px 0;
+            }
+            .boss-target:active {
+              transform: scale(1.3) rotate(15deg);
+            }
+            .health-bar-container {
+              width: 80%;
+              height: 24px;
+              background-color: #30363d;
+              border-radius: 12px;
+              margin: 10px auto;
+              overflow: hidden;
+              border: 2px solid #ffffff;
+            }
+            .health-bar {
+              width: 100%;
+              height: 100%;
+              background: linear-gradient(90deg, #ff4b4b, #ff8c00);
+              transition: width 0.1s ease;
+            }
+            .stats {
+              font-size: 18px;
+              font-weight: bold;
+            }
+            .win-msg {
+              color: #00ff00;
+              font-size: 26px;
+              font-weight: bold;
+            }
+            button {
+              background-color: #238636;
+              color: white;
+              border: none;
+              padding: 8px 16px;
+              font-size: 14px;
+              border-radius: 6px;
+              cursor: pointer;
+              margin-top: 10px;
+            }
+          </style>
+        </head>
+        <body>
+          <h3>💥 DEFEAT THE GOOFY BOSS!</h3>
+          <p style="color: #8b949e; margin: 0;">Tap the emoji 25 times before time runs out!</p>
+
+          <div class="health-bar-container">
+            <div id="hpBar" class="health-bar"></div>
+          </div>
+
+          <div id="target" class="boss-target" onclick="hitBoss()">🤪</div>
+
+          <div class="stats">
+            <span id="scoreText">Hits: 0 / 25</span> | 
+            <span id="timerText">Time Left: 10s</span>
+          </div>
+
+          <div id="resultText"></div>
+
+          <script>
+            let hits = 0;
+            const maxHits = 25;
+            let timeLeft = 10;
+            let gameActive = true;
+            let timer = null;
+
+            function startTimer() {
+              timer = setInterval(() => {
+                if (!gameActive) return;
+                timeLeft--;
+                document.getElementById("timerText").innerText = "Time Left: " + timeLeft + "s";
+                
+                if (timeLeft <= 0) {
+                  endGame(false);
+                }
+              }, 1000);
+            }
+
+            function hitBoss() {
+              if (!gameActive) return;
+              
+              hits++;
+              const hpPercent = Math.max(0, 100 - (hits / maxHits * 100));
+              document.getElementById("hpBar").style.width = hpPercent + "%";
+              document.getElementById("scoreText").innerText = "Hits: " + hits + " / " + maxHits;
+
+              if (hits >= maxHits) {
+                endGame(true);
+              }
+            }
+
+            function endGame(won) {
+              gameActive = false;
+              clearInterval(timer);
+              const res = document.getElementById("resultText");
+              const target = document.getElementById("target");
+
+              if (won) {
+                target.innerText = "😵‍💫";
+                res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! 🏆</div><button onclick='resetGame()'>Play Again</button>";
+              } else {
+                target.innerText = "🤡";
+                res.innerHTML = "<div style='color: #ff4b4b; font-size: 20px; font-weight: bold;'>⏰ TIME EXPIRED! The Boss Escaped!</div><button onclick='resetGame()'>Try Again</button>";
+              }
+            }
+
+            function resetGame() {
+              hits = 0;
+              timeLeft = 10;
+              gameActive = true;
+              document.getElementById("target").innerText = "🤪";
+              document.getElementById("hpBar").style.width = "100%";
+              document.getElementById("scoreText").innerText = "Hits: 0 / " + maxHits;
+              document.getElementById("timerText").innerText = "Time Left: 10s";
+              document.getElementById("resultText").innerHTML = "";
+              clearInterval(timer);
+              startTimer();
+            }
+
+            startTimer();
+          </script>
+        </body>
+        </html>
+        """
+        components.html(secret_game_html, height=290)
+
+    if st.button("🔄 Refresh Messages"):
+        st.rerun()
+
+    # --- CAL
