@@ -227,12 +227,12 @@ if st.session_state["show_secret_game"]:
 
     function arenaSweep() {
       let rowCount = 0;
-      outer: for (let r = arena.length - 1; r > 0; --r) {
-        for (let c = 0; c < arena[r].length; ++c) {
-          if (arena[r][c] === 0) continue outer;
+      outer: for (let r = board.length - 1; r > 0; --r) {
+        for (let c = 0; c < board[r].length; ++c) {
+          if (board[r][c] === 0) continue outer;
         }
-        const row = arena.splice(r, 1)[0].fill(0);
-        arena.unshift(row);
+        const row = board.splice(r, 1)[0].fill(0);
+        board.unshift(row);
         ++r;
         rowCount++;
       }
