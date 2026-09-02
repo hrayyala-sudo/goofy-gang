@@ -10,7 +10,7 @@ st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="wid
 ALLOWED_USERS = ["pranav", "calvin", "austin", "goofy member"]
 CORRECT_PASSWORD = "goofy123"
 
-# Initialize Session State
+# Initialize Base Session State
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "nickname" not in st.session_state:
@@ -21,6 +21,21 @@ if "tetris_unlocked" not in st.session_state:
     st.session_state["tetris_unlocked"] = False
 if "active_page" not in st.session_state:
     st.session_state["active_page"] = "💬 Goofy Chatbox"
+
+# --- HANDLE SECRET GAME UNLOCK & NAVIGATION TRIGGERS FIRST ---
+if st.query_params.get("boss_defeated") == "true":
+    st.session_state["tetris_unlocked"] = True
+    st.session_state["show_secret_game"] = False
+    st.session_state["active_page"] = "🔴 Tetris"
+    st.session_state["nav_radio"] = "🔴 Tetris"  # Force radio key update
+    st.query_params.clear()
+    st.balloons()
+    st.rerun()
+
+if st.query_params.get("toggle_boss") == "true":
+    st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
+    st.query_params.clear()
+    st.rerun()
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -56,22 +71,6 @@ if not st.session_state["logged_in"]:
     show_login_screen()
     st.stop()
 
-# --- HANDLE SECRET GAME UNLOCK & NAVIGATION CONTROLS ---
-# Handle Boss Defeat Trigger from Query Params
-if st.query_params.get("boss_defeated") == "true":
-    st.session_state["tetris_unlocked"] = True
-    st.session_state["show_secret_game"] = False
-    st.session_state["active_page"] = "🔴 Tetris"  # Instantly switch tab to Tetris
-    st.query_params.clear()
-    st.balloons()
-    st.rerun()
-
-# Handle Header Big Boss Trigger Click
-if st.query_params.get("toggle_boss") == "true":
-    st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
-    st.query_params.clear()
-    st.rerun()
-
 # --- 4. SIDEBAR NAVIGATION ---
 st.sidebar.caption(f"Logged in as **{st.session_state['nickname']}**")
 
@@ -84,27 +83,30 @@ if st.sidebar.button("Save Nickname"):
 st.sidebar.divider()
 st.sidebar.markdown("**Pages**")
 
-# Dynamic navigation list
+# Build dynamic navigation list
 pages_list = ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge", "🟡 Pac-Man"]
 if st.session_state["tetris_unlocked"]:
     pages_list.append("🔴 Tetris")
 
-# Ensure active page stays valid
+# Keep active page valid
 if st.session_state["active_page"] not in pages_list:
     st.session_state["active_page"] = pages_list[0]
 
-# Radio navigation synced with session state
+# Ensure the key for nav_radio is aligned with active_page
+if "nav_radio" not in st.session_state or st.session_state["nav_radio"] not in pages_list:
+    st.session_state["nav_radio"] = st.session_state["active_page"]
+
+def on_nav_change():
+    st.session_state["active_page"] = st.session_state["nav_radio"]
+
+# Render navigation radio
 page = st.sidebar.radio(
     "Navigation",
     pages_list,
-    index=pages_list.index(st.session_state["active_page"]),
     key="nav_radio",
+    on_change=on_nav_change,
     label_visibility="collapsed"
 )
-
-# Update state if user clicks sidebar navigation manually
-if page != st.session_state["active_page"]:
-    st.session_state["active_page"] = page
 
 st.sidebar.divider()
 if st.sidebar.button("Logout"):
@@ -116,7 +118,6 @@ if st.sidebar.button("Logout"):
 title_col1, title_col2 = st.columns([0.15, 0.85])
 
 with title_col1:
-    # Pure HTML/JS Click Target: completely bypasses standard Streamlit button borders
     header_icon_html = """<!DOCTYPE html>
 <html>
 <head>
@@ -152,7 +153,7 @@ st.markdown("---")
 
 # Banner message when Tetris is unlocked
 if st.session_state["tetris_unlocked"] and page == "🔴 Tetris":
-    st.success("🏆 **BOSS DEFEATED!** Tetris is unlocked and ready to play!")
+    st.success("🏆 **BOSS DEFEATED!** Tetris is now unlocked in your sidebar!")
 
 # --- SECRET GOOFY BOSS GAME OVERLAY ---
 if st.session_state["show_secret_game"]:
