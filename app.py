@@ -19,6 +19,8 @@ if "show_secret_game" not in st.session_state:
     st.session_state["show_secret_game"] = False
 if "tetris_unlocked" not in st.session_state:
     st.session_state["tetris_unlocked"] = False
+if "active_page" not in st.session_state:
+    st.session_state["active_page"] = "💬 Goofy Chatbox"
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -54,6 +56,22 @@ if not st.session_state["logged_in"]:
     show_login_screen()
     st.stop()
 
+# --- HANDLE SECRET GAME UNLOCK & NAVIGATION CONTROLS ---
+# Handle Boss Defeat Trigger from Query Params
+if st.query_params.get("boss_defeated") == "true":
+    st.session_state["tetris_unlocked"] = True
+    st.session_state["show_secret_game"] = False
+    st.session_state["active_page"] = "🔴 Tetris"  # Instantly switch tab to Tetris
+    st.query_params.clear()
+    st.balloons()
+    st.rerun()
+
+# Handle Header Big Boss Trigger Click
+if st.query_params.get("toggle_boss") == "true":
+    st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
+    st.query_params.clear()
+    st.rerun()
+
 # --- 4. SIDEBAR NAVIGATION ---
 st.sidebar.caption(f"Logged in as **{st.session_state['nickname']}**")
 
@@ -71,11 +89,22 @@ pages_list = ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "�
 if st.session_state["tetris_unlocked"]:
     pages_list.append("🔴 Tetris")
 
+# Ensure active page stays valid
+if st.session_state["active_page"] not in pages_list:
+    st.session_state["active_page"] = pages_list[0]
+
+# Radio navigation synced with session state
 page = st.sidebar.radio(
     "Navigation",
     pages_list,
+    index=pages_list.index(st.session_state["active_page"]),
+    key="nav_radio",
     label_visibility="collapsed"
 )
+
+# Update state if user clicks sidebar navigation manually
+if page != st.session_state["active_page"]:
+    st.session_state["active_page"] = page
 
 st.sidebar.divider()
 if st.sidebar.button("Logout"):
@@ -83,53 +112,47 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN HEADER WITH BIG BOSS TRIGGER ICON ---
-st.markdown("""
-<style>
-    /* Completely strip button formatting to make it look like a raw big icon */
-    div.big-boss-btn > button {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        font-size: 85px !important;
-        cursor: pointer !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        line-height: 1 !important;
-        outline: none !important;
-    }
-    div.big-boss-btn > button:hover,
-    div.big-boss-btn > button:focus,
-    div.big-boss-btn > button:active {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-title_col1, title_col2 = st.columns([0.1, 0.9])
+# --- 5. MAIN HEADER WITH SEAMLESS 85px BOSS ICON ---
+title_col1, title_col2 = st.columns([0.15, 0.85])
 
 with title_col1:
-    st.markdown('<div class="big-boss-btn">', unsafe_allow_html=True)
-    if st.button("🤪", key="big_header_boss_btn"):
-        st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Pure HTML/JS Click Target: completely bypasses standard Streamlit button borders
+    header_icon_html = """<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { margin: 0; padding: 0; background: transparent; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+    .giant-emoji-btn {
+      font-size: 85px;
+      line-height: 1;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.1s ease;
+      display: inline-block;
+    }
+    .giant-emoji-btn:hover { transform: scale(1.15) rotate(5deg); }
+    .giant-emoji-btn:active { transform: scale(0.95); }
+  </style>
+</head>
+<body>
+  <div class="giant-emoji-btn" onclick="triggerBoss()">🤪</div>
+  <script>
+    function triggerBoss() {
+      window.parent.location.search = "?toggle_boss=true";
+    }
+  </script>
+</body>
+</html>"""
+    components.html(header_icon_html, height=100)
 
 with title_col2:
     st.title("Goofy Gang Dashboard")
 
 st.markdown("---")
 
-# --- HANDLE SECRET GAME UNLOCK ACTION ---
-if st.query_params.get("boss_defeated") == "true":
-    st.session_state["tetris_unlocked"] = True
-    st.session_state["show_secret_game"] = False
-    st.query_params.clear()
-    st.balloons()
-    st.success("🏆 **BOSS DEFEATED!** You unlocked **🔴 Tetris** in the navigation bar!")
-    st.rerun()
+# Banner message when Tetris is unlocked
+if st.session_state["tetris_unlocked"] and page == "🔴 Tetris":
+    st.success("🏆 **BOSS DEFEATED!** Tetris is unlocked and ready to play!")
 
 # --- SECRET GOOFY BOSS GAME OVERLAY ---
 if st.session_state["show_secret_game"]:
@@ -199,10 +222,10 @@ if st.session_state["show_secret_game"]:
 
       if (won) {
         target.innerText = "😵‍💫";
-        res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! Unlocking Tetris...</div>";
+        res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! Launching Tetris...</div>";
         setTimeout(() => {
           window.parent.location.search = "?boss_defeated=true";
-        }, 800);
+        }, 500);
       } else {
         target.innerText = "🤡";
         res.innerHTML = "<div style='color: #ff4b4b; font-size: 20px; font-weight: bold;'>⏰ TIME EXPIRED! The Boss Escaped!</div><button onclick='resetGame()'>Try Again</button>";
