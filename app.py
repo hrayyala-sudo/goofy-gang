@@ -66,10 +66,10 @@ if st.sidebar.button("Save Nickname"):
 st.sidebar.divider()
 st.sidebar.markdown("**Pages**")
 
-# Dynamic navigation list (Unlocks Tetris if boss defeated)
+# Dynamic navigation list
 pages_list = ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge", "🟡 Pac-Man"]
 if st.session_state["tetris_unlocked"]:
-    pages_list.append("🧱 Tetris")
+    pages_list.append("🔴 Tetris")
 
 page = st.sidebar.radio(
     "Navigation",
@@ -83,66 +83,56 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN DASHBOARD ---
-st.title("🤪 Goofy Gang Dashboard")
+# --- 5. MAIN HEADER WITH BIG BOSS TRIGGER ICON ---
+st.markdown("""
+<style>
+    div.big-boss-btn > button {
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        font-size: 55px !important;
+        cursor: pointer;
+        padding: 0 !important;
+        margin: 0 !important;
+        line-height: 1 !important;
+        transition: transform 0.2s ease;
+    }
+    div.big-boss-btn > button:hover {
+        transform: scale(1.15) rotate(10deg);
+    }
+    div.big-boss-btn > button:active {
+        transform: scale(0.95);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+title_col1, title_col2 = st.columns([0.08, 0.92])
+
+with title_col1:
+    st.markdown('<div class="big-boss-btn">', unsafe_allow_html=True)
+    if st.button("🤪", key="big_header_boss_btn"):
+        st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
+    st.markdown('</div>', unsafe_allow_html=True)
+
+with title_col2:
+    st.title("Goofy Gang Dashboard")
+
 st.markdown("---")
 
-# --- PAGE 1: GOOFY CHATBOX ---
-if page == "💬 Goofy Chatbox":
-    st.markdown("""
-    <style>
-        .element-container:has(div.secret-logo-wrapper) {
-            position: absolute;
-            top: 0;
-            right: 10px;
-            z-index: 999;
-        }
-        div.secret-logo-wrapper > button {
-            background: none !important;
-            border: none !important;
-            box-shadow: none !important;
-            font-size: 85px !important;
-            cursor: pointer;
-            padding: 0 !important;
-            margin: 0 !important;
-            line-height: 1 !important;
-            transition: transform 0.2s ease;
-        }
-        div.secret-logo-wrapper > button:hover {
-            transform: scale(1.1) rotate(5deg);
-        }
-        div.secret-logo-wrapper > button:active {
-            transform: scale(0.95);
-        }
-    </style>
-    """, unsafe_allow_html=True)
+# --- HANDLE SECRET GAME UNLOCK ACTION ---
+if st.query_params.get("boss_defeated") == "true":
+    st.session_state["tetris_unlocked"] = True
+    st.session_state["show_secret_game"] = False
+    st.query_params.clear()
+    st.balloons()
+    st.success("🏆 **BOSS DEFEATED!** You unlocked **🔴 Tetris** in the navigation bar!")
+    st.rerun()
 
-    header_col, logo_col = st.columns([5, 1])
-
-    with header_col:
-        st.header("💬 Goofy Chatbox")
-        st.write("Welcome to the main chat room! Messages update for everyone.")
-
-    with logo_col:
-        st.markdown('<div class="secret-logo-wrapper">', unsafe_allow_html=True)
-        if st.button("🤪", key="secret_chat_logo"):
-            st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    # --- HANDLE SECRET GAME UNLOCK ACTION ---
-    if st.query_params.get("boss_defeated") == "true":
-        st.session_state["tetris_unlocked"] = True
-        st.session_state["show_secret_game"] = False
-        st.query_params.clear()
-        st.balloons()
-        st.success("🏆 **BOSS DEFEATED!** You unlocked **🧱 Tetris** permanently in the sidebar menu!")
-        st.rerun()
-
-    # --- SECRET GOOFY BOSS GAME OVERLAY ---
-    if st.session_state["show_secret_game"]:
-        st.info("🎉 **SECRET UNLOCKED!** Defeat the Goofy Boss to unlock a permanent arcade game!")
-        
-        secret_game_html = """<!DOCTYPE html>
+# --- SECRET GOOFY BOSS GAME OVERLAY ---
+if st.session_state["show_secret_game"]:
+    st.info("🎉 **SECRET UNLOCKED!** Defeat the Goofy Boss to unlock a permanent arcade game!")
+    
+    secret_game_html = """<!DOCTYPE html>
 <html>
 <head>
   <style>
@@ -233,7 +223,12 @@ if page == "💬 Goofy Chatbox":
   </script>
 </body>
 </html>"""
-        components.html(secret_game_html, height=290)
+    components.html(secret_game_html, height=290)
+
+# --- PAGE 1: GOOFY CHATBOX ---
+if page == "💬 Goofy Chatbox":
+    st.header("💬 Goofy Chatbox")
+    st.write("Welcome to the main chat room! Messages update for everyone.")
 
     if st.button("🔄 Refresh Messages"):
         st.rerun()
@@ -838,8 +833,8 @@ elif page == "🟡 Pac-Man":
     components.html(pacman_html, height=520)
 
 # --- PAGE 7: UNLOCKED TETRIS GAME ---
-elif page == "🧱 Tetris":
-    st.header("🧱 Classic Arcade Tetris")
+elif page in ["🧱 Tetris", "🔴 Tetris"]:
+    st.header("🔴 Classic Arcade Tetris")
     st.write("Control falling blocks, complete horizontal lines, and set high scores!")
 
     tetris_html = """<!DOCTYPE html>
@@ -907,7 +902,7 @@ elif page == "🧱 Tetris":
       "#ffff00", // O - Yellow
       "#00ff00", // S - Green
       "#800080", // T - Purple
-      "#ff0000"  # Z - Red
+      "#ff0000"  // Z - Red
     ];
 
     const SHAPES = [
@@ -1095,7 +1090,6 @@ elif page == "🧱 Tetris":
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Grid background lines
       ctx.strokeStyle = "#161b22";
       for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
