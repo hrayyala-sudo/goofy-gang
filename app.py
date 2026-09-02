@@ -101,24 +101,18 @@ if st.sidebar.button("Logout"):
 st.markdown("""
 <style>
 div.stButton > button[kind="secondary"] {
-    font-size: 38px !important;
-    height: 65px !important;
+    font-size: 32px !important;
+    height: 55px !important;
     line-height: 1 !important;
     padding: 0px !important;
-    background: transparent !important;
-    border: none !important;
-}
-div.stButton > button[kind="secondary"]:hover {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px dashed #ff4b4b !important;
 }
 </style>
 """, unsafe_allow_html=True)
 
-title_col1, title_col2 = st.columns([0.12, 0.88])
+title_col1, title_col2 = st.columns([0.15, 0.85])
 
 with title_col1:
-    if st.button("🤪", key="boss_toggle_btn", help="Click to open Secret Tetris!"):
+    if st.button("🤪", key="boss_toggle_btn", use_container_width=True, help="Click to open Secret Tetris!"):
         st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
         st.rerun()
 
@@ -1016,10 +1010,11 @@ elif page == "🟡 Pac-Man":
 
 # --- PAGE 7: FEATURE REQUESTS ---
 elif page == "💡 Feature Requests":
-    is_pranav = st.session_state["nickname"].strip().lower() == "pranav"
+    is_admin = st.session_state["nickname"].strip().lower() in ["pranav", "calvin"]
     
-    if is_pranav:
-        st.header("👑 Pranav's Feature Request Dashboard")
+    if is_admin:
+        admin_name = st.session_state["nickname"].strip().capitalize()
+        st.header(f"👑 {admin_name}'s Feature Request Dashboard")
         st.write("Here are all the features requested by the gang:")
         
         if not st.session_state["feature_requests"]:
@@ -1034,7 +1029,7 @@ elif page == "💡 Feature Requests":
                         st.rerun()
     else:
         st.header("💡 Request a Feature")
-        st.write("Got a cool idea for the Goofy Gang Portal? Let Pranav know below!")
+        st.write("Got a cool idea for the Goofy Gang Portal? Let Pranav & Calvin know below!")
         
         with st.form("feature_form", clear_on_submit=True):
             user_request = st.text_area("What feature would you like to see added?")
@@ -1048,6 +1043,6 @@ elif page == "💡 Feature Requests":
                         "text": user_request.strip(),
                         "time": time_str
                     })
-                    st.success("Your feature request has been sent straight to Pranav!")
+                    st.success("Your feature request has been sent straight to Pranav & Calvin!")
                 else:
                     st.warning("Please type something before submitting.")
