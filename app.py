@@ -97,13 +97,13 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN HEADER WITH SQUARE EMOJI BUTTON ---
+# --- 5. MAIN HEADER WITH BIGGER SQUARE EMOJI BUTTON ---
 st.markdown("""
 <style>
-div.stButton > button[kind="secondary"] {
-    font-size: 48px !important;
-    width: 80px !important;
-    height: 80px !important;
+div[data-testid="column"]:first-child button {
+    font-size: 72px !important;
+    width: 120px !important;
+    height: 120px !important;
     line-height: 1 !important;
     padding: 0px !important;
 }
