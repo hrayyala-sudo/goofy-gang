@@ -22,19 +22,14 @@ if "tetris_unlocked" not in st.session_state:
 if "active_page" not in st.session_state:
     st.session_state["active_page"] = "💬 Goofy Chatbox"
 
-# --- HANDLE SECRET GAME UNLOCK & NAVIGATION TRIGGERS FIRST ---
+# --- HANDLE SECRET GAME UNLOCK VIA QUERY PARAM ---
 if st.query_params.get("boss_defeated") == "true":
     st.session_state["tetris_unlocked"] = True
     st.session_state["show_secret_game"] = False
     st.session_state["active_page"] = "🔴 Tetris"
-    st.session_state["nav_radio"] = "🔴 Tetris"  # Force radio key update
+    st.session_state["nav_radio"] = "🔴 Tetris"  # Force radio key sync
     st.query_params.clear()
     st.balloons()
-    st.rerun()
-
-if st.query_params.get("toggle_boss") == "true":
-    st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
-    st.query_params.clear()
     st.rerun()
 
 # --- 2. GLOBAL CHAT STORAGE ---
@@ -114,37 +109,14 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN HEADER WITH SEAMLESS 85px BOSS ICON ---
+# --- 5. MAIN HEADER WITH NATIVE STREAMLIT TRIGGER ---
 title_col1, title_col2 = st.columns([0.15, 0.85])
 
 with title_col1:
-    header_icon_html = """<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { margin: 0; padding: 0; background: transparent; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-    .giant-emoji-btn {
-      font-size: 85px;
-      line-height: 1;
-      cursor: pointer;
-      user-select: none;
-      transition: transform 0.1s ease;
-      display: inline-block;
-    }
-    .giant-emoji-btn:hover { transform: scale(1.15) rotate(5deg); }
-    .giant-emoji-btn:active { transform: scale(0.95); }
-  </style>
-</head>
-<body>
-  <div class="giant-emoji-btn" onclick="triggerBoss()">🤪</div>
-  <script>
-    function triggerBoss() {
-      window.parent.location.search = "?toggle_boss=true";
-    }
-  </script>
-</body>
-</html>"""
-    components.html(header_icon_html, height=100)
+    # Stylized large toggle button for the Boss Fight
+    if st.button("🤪", key="boss_toggle_btn", help="Click to trigger the Secret Boss Fight!"):
+        st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
+        st.rerun()
 
 with title_col2:
     st.title("Goofy Gang Dashboard")
@@ -225,7 +197,11 @@ if st.session_state["show_secret_game"]:
         target.innerText = "😵‍💫";
         res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! Launching Tetris...</div>";
         setTimeout(() => {
-          window.parent.location.search = "?boss_defeated=true";
+          try {
+            window.top.location.href = window.top.location.pathname + "?boss_defeated=true";
+          } catch (e) {
+            window.location.search = "?boss_defeated=true";
+          }
         }, 500);
       } else {
         target.innerText = "🤡";
@@ -472,7 +448,7 @@ elif page == "🚀 Asteroid Dodge":
 </html>"""
     components.html(asteroid_game_html, height=520)
 
-# --- PAGE 6: AUTHENTIC PAC-MAN ARCADE ---
+# --- PAGE 6: PAC-MAN ARCADE ---
 elif page == "🟡 Pac-Man":
     st.header("🟡 Pac-Man Ultra-Smooth Arcade Edition")
     st.write("Chomp dots, grab Power Pellets, turn the tables on ghosts, and escape through the side tunnels!")
