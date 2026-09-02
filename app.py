@@ -21,16 +21,8 @@ if "tetris_unlocked" not in st.session_state:
     st.session_state["tetris_unlocked"] = False
 if "active_page" not in st.session_state:
     st.session_state["active_page"] = "💬 Goofy Chatbox"
-
-# --- HANDLE SECRET GAME UNLOCK VIA QUERY PARAM ---
-if st.query_params.get("boss_defeated") == "true":
-    st.session_state["tetris_unlocked"] = True
-    st.session_state["show_secret_game"] = False
-    st.session_state["active_page"] = "🔴 Tetris"
-    st.session_state["nav_radio"] = "🔴 Tetris"  # Force radio key sync
-    st.query_params.clear()
-    st.balloons()
-    st.rerun()
+if "boss_hits" not in st.session_state:
+    st.session_state["boss_hits"] = 0
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -143,106 +135,48 @@ st.markdown("---")
 if st.session_state["tetris_unlocked"] and page == "🔴 Tetris":
     st.success("🏆 **BOSS DEFEATED!** Tetris is now unlocked in your sidebar!")
 
-# --- SECRET GOOFY BOSS GAME OVERLAY ---
+# --- SECRET GOOFY BOSS GAME OVERLAY (NATIVE STREAMLIT) ---
 if st.session_state["show_secret_game"]:
-    st.info("🎉 **SECRET UNLOCKED!** Defeat the Goofy Boss to unlock a permanent arcade game!")
+    st.info("🎉 **SECRET UNLOCKED!** Smash the Goofy Boss 25 times to unlock Tetris!")
     
-    secret_game_html = """<!DOCTYPE html>
-<html>
-<head>
-  <style>
-    body { background-color: #161b22; color: white; font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 15px; border: 3px dashed #ff4b4b; border-radius: 12px; }
-    .boss-target { font-size: 80px; cursor: pointer; user-select: none; display: inline-block; transition: transform 0.05s ease; margin: 15px 0; }
-    .boss-target:active { transform: scale(1.3) rotate(15deg); }
-    .health-bar-container { width: 80%; height: 24px; background-color: #30363d; border-radius: 12px; margin: 10px auto; overflow: hidden; border: 2px solid #ffffff; }
-    .health-bar { width: 100%; height: 100%; background: linear-gradient(90deg, #ff4b4b, #ff8c00); transition: width 0.1s ease; }
-    .stats { font-size: 18px; font-weight: bold; }
-    .win-msg { color: #00ff00; font-size: 26px; font-weight: bold; }
-    button { background-color: #238636; color: white; border: none; padding: 8px 16px; font-size: 14px; border-radius: 6px; cursor: pointer; margin-top: 10px; }
-  </style>
-</head>
-<body>
-  <h3>💥 DEFEAT THE GOOFY BOSS!</h3>
-  <p style="color: #8b949e; margin: 0;">Tap the emoji 25 times before time runs out!</p>
-
-  <div class="health-bar-container">
-    <div id="hpBar" class="health-bar"></div>
-  </div>
-
-  <div id="target" class="boss-target" onclick="hitBoss()">🤪</div>
-
-  <div class="stats">
-    <span id="scoreText">Hits: 0 / 25</span> | 
-    <span id="timerText">Time Left: 10s</span>
-  </div>
-
-  <div id="resultText"></div>
-
-  <script>
-    let hits = 0;
-    const maxHits = 25;
-    let timeLeft = 10;
-    let gameActive = true;
-    let timer = null;
-
-    function startTimer() {
-      timer = setInterval(() => {
-        if (!gameActive) return;
-        timeLeft--;
-        document.getElementById("timerText").innerText = "Time Left: " + timeLeft + "s";
-        if (timeLeft <= 0) endGame(false);
-      }, 1000);
+    max_hits = 25
+    hits = st.session_state["boss_hits"]
+    hp_percent = max(0, 100 - int((hits / max_hits) * 100))
+    
+    st.progress(hp_percent / 100, text=f"Boss HP: {hp_percent}%")
+    st.write(f"### Hits: {hits} / {max_hits}")
+    
+    st.markdown("""
+    <style>
+    div.stButton > button[key="boss_clicker"] {
+        font-size: 80px !important;
+        height: 140px !important;
+        width: 100% !important;
+        border-radius: 20px !important;
+        background-color: #161b22 !important;
+        border: 3px dashed #ff4b4b !important;
     }
+    </style>
+    """, unsafe_allow_html=True)
 
-    function hitBoss() {
-      if (!gameActive) return;
-      hits++;
-      const hpPercent = Math.max(0, 100 - (hits / maxHits * 100));
-      document.getElementById("hpBar").style.width = hpPercent + "%";
-      document.getElementById("scoreText").innerText = "Hits: " + hits + " / " + maxHits;
-      if (hits >= maxHits) endGame(true);
-    }
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        if st.button("🤪", key="boss_clicker", use_container_width=True):
+            st.session_state["boss_hits"] += 1
+            if st.session_state["boss_hits"] >= max_hits:
+                st.session_state["tetris_unlocked"] = True
+                st.session_state["show_secret_game"] = False
+                st.session_state["active_page"] = "🔴 Tetris"
+                st.session_state["nav_radio"] = "🔴 Tetris"
+                st.session_state["boss_hits"] = 0
+                st.balloons()
+                st.rerun()
+            else:
+                st.rerun()
 
-    function endGame(won) {
-      gameActive = false;
-      clearInterval(timer);
-      const res = document.getElementById("resultText");
-      const target = document.getElementById("target");
-
-      if (won) {
-        target.innerText = "😵‍💫";
-        res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! Launching Tetris...</div>";
-        setTimeout(() => {
-          try {
-            window.top.location.href = window.top.location.pathname + "?boss_defeated=true";
-          } catch (e) {
-            window.location.search = "?boss_defeated=true";
-          }
-        }, 500);
-      } else {
-        target.innerText = "🤡";
-        res.innerHTML = "<div style='color: #ff4b4b; font-size: 20px; font-weight: bold;'>⏰ TIME EXPIRED! The Boss Escaped!</div><button onclick='resetGame()'>Try Again</button>";
-      }
-    }
-
-    function resetGame() {
-      hits = 0;
-      timeLeft = 10;
-      gameActive = true;
-      document.getElementById("target").innerText = "🤪";
-      document.getElementById("hpBar").style.width = "100%";
-      document.getElementById("scoreText").innerText = "Hits: 0 / " + maxHits;
-      document.getElementById("timerText").innerText = "Time Left: 10s";
-      document.getElementById("resultText").innerHTML = "";
-      clearInterval(timer);
-      startTimer();
-    }
-
-    startTimer();
-  </script>
-</body>
-</html>"""
-    components.html(secret_game_html, height=290)
+    if st.button("Reset Boss Progress"):
+        st.session_state["boss_hits"] = 0
+        st.rerun()
 
 # --- PAGE 1: GOOFY CHATBOX ---
 if page == "💬 Goofy Chatbox":
