@@ -100,12 +100,16 @@ if st.sidebar.button("Logout"):
 # --- 5. MAIN HEADER WITH BIGGER SQUARE EMOJI BUTTON ---
 st.markdown("""
 <style>
-div[data-testid="column"]:first-child button {
+section[data-testid="stMain"] div[data-testid="column"]:first-child button {
     font-size: 72px !important;
     width: 120px !important;
     height: 120px !important;
+    min-height: 120px !important;
     line-height: 1 !important;
     padding: 0px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 </style>
 """, unsafe_allow_html=True)
