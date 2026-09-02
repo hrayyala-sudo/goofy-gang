@@ -97,19 +97,22 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN HEADER WITH BIGGER SQUARE EMOJI BUTTON ---
+# --- 5. MAIN HEADER WITH BLENDING EMOJI BUTTON ---
 st.markdown("""
 <style>
 section[data-testid="stMain"] div[data-testid="column"]:first-child button {
-    font-size: 72px !important;
-    width: 120px !important;
-    height: 120px !important;
-    min-height: 120px !important;
-    line-height: 1 !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    font-size: 48px !important;
     padding: 0px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    width: auto !important;
+    height: auto !important;
+    min-height: unset !important;
+}
+section[data-testid="stMain"] div[data-testid="column"]:first-child button:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    border: none !important;
 }
 </style>
 """, unsafe_allow_html=True)
