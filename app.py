@@ -47,6 +47,7 @@ def show_login_screen():
             else:
                 st.error("Incorrect password!")
 
+# STOP RUNNING SCRIPT IF NOT LOGGED IN
 if not st.session_state["logged_in"]:
     show_login_screen()
     st.stop()
@@ -197,111 +198,4 @@ if page == "💬 Goofy Chatbox":
 
   <div class="stats">
     <span id="scoreText">Hits: 0 / 25</span> | 
-    <span id="timerText">Time Left: 10s</span>
-  </div>
-
-  <div id="resultText"></div>
-
-  <script>
-    let hits = 0;
-    const maxHits = 25;
-    let timeLeft = 10;
-    let gameActive = true;
-    let timer = null;
-
-    function startTimer() {
-      timer = setInterval(() => {
-        if (!gameActive) return;
-        timeLeft--;
-        document.getElementById("timerText").innerText = "Time Left: " + timeLeft + "s";
-        
-        if (timeLeft <= 0) {
-          endGame(false);
-        }
-      }, 1000);
-    }
-
-    function hitBoss() {
-      if (!gameActive) return;
-      
-      hits++;
-      const hpPercent = Math.max(0, 100 - (hits / maxHits * 100));
-      document.getElementById("hpBar").style.width = hpPercent + "%";
-      document.getElementById("scoreText").innerText = "Hits: " + hits + " / " + maxHits;
-
-      if (hits >= maxHits) {
-        endGame(true);
-      }
-    }
-
-    function endGame(won) {
-      gameActive = false;
-      clearInterval(timer);
-      const res = document.getElementById("resultText");
-      const target = document.getElementById("target");
-
-      if (won) {
-        target.innerText = "😵‍💫";
-        res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! 🏆</div><button onclick='resetGame()'>Play Again</button>";
-      } else {
-        target.innerText = "🤡";
-        res.innerHTML = "<div style='color: #ff4b4b; font-size: 20px; font-weight: bold;'>⏰ TIME EXPIRED! The Boss Escaped!</div><button onclick='resetGame()'>Try Again</button>";
-      }
-    }
-
-    function resetGame() {
-      hits = 0;
-      timeLeft = 10;
-      gameActive = true;
-      document.getElementById("target").innerText = "🤪";
-      document.getElementById("hpBar").style.width = "100%";
-      document.getElementById("scoreText").innerText = "Hits: 0 / " + maxHits;
-      document.getElementById("timerText").innerText = "Time Left: 10s";
-      document.getElementById("resultText").innerHTML = "";
-      clearInterval(timer);
-      startTimer();
-    }
-
-    startTimer();
-  </script>
-</body>
-</html>"""
-        components.html(secret_game_html, height=290)
-
-    if st.button("🔄 Refresh Messages"):
-        st.rerun()
-
-    # --- CALVIN MODERATION CONTROLS ---
-    if st.session_state["nickname"].strip().lower() == "calvin":
-        with st.expander("👑 Calvin's Admin Chat Controls", expanded=True):
-            st.write("Manage chat messages below:")
-            
-            if global_chat:
-                col_del_spec, col_del_all = st.columns([2, 1])
-                
-                with col_del_spec:
-                    options = [f"[{i}] {m['sender']}: {m['text'][:30]}..." for i, m in enumerate(global_chat)]
-                    selected_msg = st.selectbox("Select message to delete:", options, key="admin_del_select")
-                    if st.button("Delete Selected Message"):
-                        idx = int(selected_msg.split("]")[0].replace("[", ""))
-                        del global_chat[idx]
-                        st.success("Message deleted!")
-                        st.rerun()
-
-                with col_del_all:
-                    st.write("")
-                    st.write("")
-                    if st.button("Delete ALL Messages", type="primary"):
-                        global_chat.clear()
-                        st.success("All chat messages cleared!")
-                        st.rerun()
-            else:
-                st.caption("No active messages to moderate.")
-
-    chat_container = st.container()
-    with chat_container:
-        if not global_chat:
-            st.info("No messages yet! Be the first to speak.")
-        for msg in global_chat:
-            with st.chat_message("user" if msg["sender"].lower() == st.session_state["nickname"].lower() else "assistant"):
-                st.markdown(f"**{msg['sender']}** *({msg
+    <span id="timerText
