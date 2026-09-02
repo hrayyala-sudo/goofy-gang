@@ -101,9 +101,9 @@ if st.sidebar.button("Logout"):
 st.markdown("""
 <style>
 div.stButton > button[kind="secondary"] {
-    font-size: 32px !important;
-    width: 55px !important;
-    height: 55px !important;
+    font-size: 48px !important;
+    width: 80px !important;
+    height: 80px !important;
     line-height: 1 !important;
     padding: 0px !important;
 }
@@ -1006,7 +1006,8 @@ elif page == "🟡 Pac-Man":
     requestAnimationFrame(gameLoop);
   </script>
 </body>
-</html>"""
+</html>
+"""
     components.html(pacman_html, height=520)
 
 # --- PAGE 7: FEATURE REQUESTS ---
