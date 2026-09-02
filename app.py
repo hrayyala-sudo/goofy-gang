@@ -97,11 +97,12 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN HEADER WITH ENLARGED EMOJI BUTTON ---
+# --- 5. MAIN HEADER WITH SQUARE EMOJI BUTTON ---
 st.markdown("""
 <style>
 div.stButton > button[kind="secondary"] {
     font-size: 32px !important;
+    width: 55px !important;
     height: 55px !important;
     line-height: 1 !important;
     padding: 0px !important;
@@ -112,7 +113,7 @@ div.stButton > button[kind="secondary"] {
 title_col1, title_col2 = st.columns([0.15, 0.85])
 
 with title_col1:
-    if st.button("🤪", key="boss_toggle_btn", use_container_width=True, help="Click to open Secret Tetris!"):
+    if st.button("🤪", key="boss_toggle_btn", help="Click to open Secret Tetris!"):
         st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
         st.rerun()
 
