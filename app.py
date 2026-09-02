@@ -17,6 +17,8 @@ if "nickname" not in st.session_state:
     st.session_state["nickname"] = ""
 if "show_secret_game" not in st.session_state:
     st.session_state["show_secret_game"] = False
+if "tetris_unlocked" not in st.session_state:
+    st.session_state["tetris_unlocked"] = False
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -63,9 +65,15 @@ if st.sidebar.button("Save Nickname"):
 
 st.sidebar.divider()
 st.sidebar.markdown("**Pages**")
+
+# Dynamic navigation list (Unlocks Tetris if boss defeated)
+pages_list = ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge", "🟡 Pac-Man"]
+if st.session_state["tetris_unlocked"]:
+    pages_list.append("🧱 Tetris")
+
 page = st.sidebar.radio(
     "Navigation",
-    ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge", "🟡 Pac-Man"],
+    pages_list,
     label_visibility="collapsed"
 )
 
@@ -121,9 +129,18 @@ if page == "💬 Goofy Chatbox":
             st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # --- HANDLE SECRET GAME UNLOCK ACTION ---
+    if st.query_params.get("boss_defeated") == "true":
+        st.session_state["tetris_unlocked"] = True
+        st.session_state["show_secret_game"] = False
+        st.query_params.clear()
+        st.balloons()
+        st.success("🏆 **BOSS DEFEATED!** You unlocked **🧱 Tetris** permanently in the sidebar menu!")
+        st.rerun()
+
     # --- SECRET GOOFY BOSS GAME OVERLAY ---
     if st.session_state["show_secret_game"]:
-        st.info("🎉 **SECRET UNLOCKED!** You tapped the giant Goofy Gang icon!")
+        st.info("🎉 **SECRET UNLOCKED!** Defeat the Goofy Boss to unlock a permanent arcade game!")
         
         secret_game_html = """<!DOCTYPE html>
 <html>
@@ -189,7 +206,10 @@ if page == "💬 Goofy Chatbox":
 
       if (won) {
         target.innerText = "😵‍💫";
-        res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! 🏆</div><button onclick='resetGame()'>Play Again</button>";
+        res.innerHTML = "<div class='win-msg'>🏆 YOU SMASHED THE GOOFY BOSS! Unlocking Tetris...</div>";
+        setTimeout(() => {
+          window.parent.location.search = "?boss_defeated=true";
+        }, 800);
       } else {
         target.innerText = "🤡";
         res.innerHTML = "<div style='color: #ff4b4b; font-size: 20px; font-weight: bold;'>⏰ TIME EXPIRED! The Boss Escaped!</div><button onclick='resetGame()'>Try Again</button>";
@@ -816,3 +836,322 @@ elif page == "🟡 Pac-Man":
 </body>
 </html>"""
     components.html(pacman_html, height=520)
+
+# --- PAGE 7: UNLOCKED TETRIS GAME ---
+elif page == "🧱 Tetris":
+    st.header("🧱 Classic Arcade Tetris")
+    st.write("Control falling blocks, complete horizontal lines, and set high scores!")
+
+    tetris_html = """<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background-color: #0e1117; color: white; font-family: 'Courier New', Courier, monospace; text-align: center; margin: 0; padding: 10px; }
+    .game-container { display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 10px; }
+    #tetrisCanvas { background-color: #000; border: 3px solid #ff4b4b; border-radius: 6px; box-shadow: 0 0 12px rgba(255, 75, 75, 0.4); }
+    .sidebar-panel { background: #161b22; border: 2px solid #30363d; border-radius: 8px; padding: 15px; width: 140px; text-align: left; }
+    .panel-title { font-size: 14px; color: #8b949e; text-transform: uppercase; margin-bottom: 5px; }
+    .panel-value { font-size: 22px; font-weight: bold; color: #00ff00; margin-bottom: 15px; }
+    #nextCanvas { background: #000; border: 1px solid #30363d; border-radius: 4px; }
+    .controls-info { margin-top: 15px; font-size: 13px; color: #8b949e; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <canvas id="tetrisCanvas" width="240" height="400"></canvas>
+    
+    <div class="sidebar-panel">
+      <div class="panel-title">SCORE</div>
+      <div id="scoreVal" class="panel-value">0</div>
+
+      <div class="panel-title">LINES</div>
+      <div id="linesVal" class="panel-value">0</div>
+
+      <div class="panel-title">LEVEL</div>
+      <div id="levelVal" class="panel-value">1</div>
+
+      <div class="panel-title">NEXT</div>
+      <canvas id="nextCanvas" width="80" height="80"></canvas>
+    </div>
+  </div>
+
+  <div class="controls-info">
+    Click game area! <b>Left/Right Arrow</b>: Move | <b>Up Arrow</b>: Rotate | <b>Down Arrow</b>: Soft Drop | <b>Spacebar</b>: Hard Drop | <b>R</b>: Restart
+  </div>
+
+  <script>
+    const canvas = document.getElementById("tetrisCanvas");
+    const ctx = canvas.getContext("2d");
+    const nextCanvas = document.getElementById("nextCanvas");
+    const nextCtx = nextCanvas.getContext("2d");
+
+    const ROWS = 20;
+    const COLS = 12;
+    const BLOCK_SIZE = 20;
+
+    let board = [];
+    let score = 0;
+    let lines = 0;
+    let level = 1;
+    let gameOver = false;
+    let dropCounter = 0;
+    let dropInterval = 1000;
+    let lastTime = 0;
+
+    const COLORS = [
+      null,
+      "#00ffff", // I - Cyan
+      "#0000ff", // J - Blue
+      "#ff7f00", // L - Orange
+      "#ffff00", // O - Yellow
+      "#00ff00", // S - Green
+      "#800080", // T - Purple
+      "#ff0000"  # Z - Red
+    ];
+
+    const SHAPES = [
+      [],
+      [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+      [[2,0,0],[2,2,2],[0,0,0]],
+      [[0,0,3],[3,3,3],[0,0,0]],
+      [[4,4],[4,4]],
+      [[0,5,5],[5,5,0],[0,0,0]],
+      [[0,6,0],[6,6,6],[0,0,0]],
+      [[7,7,0],[0,7,7],[0,0,0]]
+    ];
+
+    let player = {
+      pos: { x: 0, y: 0 },
+      matrix: null
+    };
+
+    let nextPiece = null;
+
+    function createBoard() {
+      return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    }
+
+    function createPiece(type) {
+      return SHAPES[type];
+    }
+
+    function resetPlayer() {
+      if (!nextPiece) {
+        nextPiece = createPiece(Math.floor(Math.random() * 7) + 1);
+      }
+      player.matrix = nextPiece;
+      nextPiece = createPiece(Math.floor(Math.random() * 7) + 1);
+
+      player.pos.y = 0;
+      player.pos.x = Math.floor((COLS - player.matrix[0].length) / 2);
+
+      if (collide(board, player)) {
+        gameOver = true;
+      }
+      drawNext();
+    }
+
+    function collide(board, player) {
+      const m = player.matrix;
+      const o = player.pos;
+      for (let y = 0; y < m.length; ++y) {
+        for (let x = 0; x < m[y].length; ++x) {
+          if (m[y][x] !== 0 &&
+             (board[y + o.y] && board[y + o.y][x + o.x]) !== 0) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function merge(board, player) {
+      player.matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            board[y + player.pos.y][x + player.pos.x] = value;
+          }
+        });
+      });
+    }
+
+    function rotate(matrix) {
+      const result = matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+      return result;
+    }
+
+    function playerRotate() {
+      const pos = player.pos.x;
+      let offset = 1;
+      const oldMatrix = player.matrix;
+      player.matrix = rotate(player.matrix);
+      while (collide(board, player)) {
+        player.pos.x += offset;
+        offset = -(offset + (offset > 0 ? 1 : -1));
+        if (offset > player.matrix[0].length) {
+          player.matrix = oldMatrix;
+          player.pos.x = pos;
+          return;
+        }
+      }
+    }
+
+    function playerMove(dir) {
+      player.pos.x += dir;
+      if (collide(board, player)) {
+        player.pos.x -= dir;
+      }
+    }
+
+    function playerDrop() {
+      player.pos.y++;
+      if (collide(board, player)) {
+        player.pos.y--;
+        merge(board, player);
+        clearLines();
+        resetPlayer();
+      }
+      dropCounter = 0;
+    }
+
+    function hardDrop() {
+      while (!collide(board, player)) {
+        player.pos.y++;
+      }
+      player.pos.y--;
+      merge(board, player);
+      clearLines();
+      resetPlayer();
+      dropCounter = 0;
+    }
+
+    function clearLines() {
+      let cleared = 0;
+      outer: for (let y = board.length - 1; y >= 0; --y) {
+        for (let x = 0; x < board[y].length; ++x) {
+          if (board[y][x] === 0) continue outer;
+        }
+        const row = board.splice(y, 1)[0].fill(0);
+        board.unshift(row);
+        ++y;
+        cleared++;
+      }
+
+      if (cleared > 0) {
+        const lineScores = [0, 100, 300, 500, 800];
+        score += lineScores[cleared] * level;
+        lines += cleared;
+        level = Math.floor(lines / 10) + 1;
+        dropInterval = Math.max(100, 1000 - (level - 1) * 80);
+
+        document.getElementById("scoreVal").innerText = score;
+        document.getElementById("linesVal").innerText = lines;
+        document.getElementById("levelVal").innerText = level;
+      }
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key)) e.preventDefault();
+      if (gameOver && (e.key === "r" || e.key === "R")) {
+        initGame();
+        return;
+      }
+      if (gameOver) return;
+
+      if (e.key === "ArrowLeft") playerMove(-1);
+      else if (e.key === "ArrowRight") playerMove(1);
+      else if (e.key === "ArrowDown") playerDrop();
+      else if (e.key === "ArrowUp") playerRotate();
+      else if (e.key === " ") hardDrop();
+    });
+
+    function drawMatrix(matrix, offset, context) {
+      matrix.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            context.fillStyle = COLORS[value];
+            context.fillRect((x + offset.x) * BLOCK_SIZE, (y + offset.y) * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+          }
+        });
+      });
+    }
+
+    function drawNext() {
+      nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+      if (!nextPiece) return;
+      const offX = (4 - nextPiece[0].length) / 2;
+      const offY = (4 - nextPiece.length) / 2;
+      nextPiece.forEach((row, y) => {
+        row.forEach((value, x) => {
+          if (value !== 0) {
+            nextCtx.fillStyle = COLORS[value];
+            nextCtx.fillRect((x + offX) * 20, (y + offY) * 20, 19, 19);
+          }
+        });
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Grid background lines
+      ctx.strokeStyle = "#161b22";
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          ctx.strokeRect(c * BLOCK_SIZE, r * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+        }
+      }
+
+      drawMatrix(board, { x: 0, y: 0 }, ctx);
+      if (player.matrix) {
+        drawMatrix(player.matrix, player.pos, ctx);
+      }
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ff4b4b";
+        ctx.font = "bold 22px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "14px sans-serif";
+        ctx.fillText("Press 'R' to Restart", canvas.width / 2, canvas.height / 2 + 20);
+        ctx.textAlign = "left";
+      }
+    }
+
+    function update(time = 0) {
+      const deltaTime = time - lastTime;
+      lastTime = time;
+
+      dropCounter += deltaTime;
+      if (dropCounter > dropInterval && !gameOver) {
+        playerDrop();
+      }
+
+      draw();
+      requestAnimationFrame(update);
+    }
+
+    function initGame() {
+      board = createBoard();
+      score = 0;
+      lines = 0;
+      level = 1;
+      dropInterval = 1000;
+      gameOver = false;
+      document.getElementById("scoreVal").innerText = "0";
+      document.getElementById("linesVal").innerText = "0";
+      document.getElementById("levelVal").innerText = "1";
+      nextPiece = null;
+      resetPlayer();
+    }
+
+    initGame();
+    update();
+  </script>
+</body>
+</html>"""
+    components.html(tetris_html, height=520)
