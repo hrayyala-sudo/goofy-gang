@@ -19,6 +19,8 @@ if "show_secret_game" not in st.session_state:
     st.session_state["show_secret_game"] = False
 if "active_page" not in st.session_state:
     st.session_state["active_page"] = "💬 Goofy Chatbox"
+if "feature_requests" not in st.session_state:
+    st.session_state["feature_requests"] = []
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -67,7 +69,7 @@ st.sidebar.divider()
 st.sidebar.markdown("**Pages**")
 
 # Build navigation list
-pages_list = ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge", "🟡 Pac-Man"]
+pages_list = ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge", "🟡 Pac-Man", "💡 Feature Requests"]
 
 # Keep active page valid
 if st.session_state["active_page"] not in pages_list:
@@ -1011,3 +1013,41 @@ elif page == "🟡 Pac-Man":
 </body>
 </html>"""
     components.html(pacman_html, height=520)
+
+# --- PAGE 7: FEATURE REQUESTS ---
+elif page == "💡 Feature Requests":
+    is_calvin = st.session_state["nickname"].strip().lower() == "calvin"
+    
+    if is_calvin:
+        st.header("👑 Calvin's Feature Request Dashboard")
+        st.write("Here are all the features requested by the gang:")
+        
+        if not st.session_state["feature_requests"]:
+            st.info("No feature requests submitted yet.")
+        else:
+            for i, req in enumerate(st.session_state["feature_requests"]):
+                with st.expander(f"📌 Request #{i+1} by {req['sender']} ({req['time']})"):
+                    st.write(req['text'])
+                    if st.button("Delete Request", key=f"del_req_{i}"):
+                        del st.session_state["feature_requests"][i]
+                        st.success("Request deleted!")
+                        st.rerun()
+    else:
+        st.header("💡 Request a Feature")
+        st.write("Got a cool idea for the Goofy Gang Portal? Let Calvin know below!")
+        
+        with st.form("feature_form", clear_on_submit=True):
+            user_request = st.text_area("What feature would you like to see added?")
+            submitted = st.form_submit_button("Submit Request")
+            
+            if submitted:
+                if user_request.strip():
+                    time_str = datetime.now().strftime("%B %d, %Y - %I:%M %p")
+                    st.session_state["feature_requests"].append({
+                        "sender": st.session_state["nickname"],
+                        "text": user_request.strip(),
+                        "time": time_str
+                    })
+                    st.success("Your feature request has been sent straight to Calvin!")
+                else:
+                    st.warning("Please type something before submitting.")
