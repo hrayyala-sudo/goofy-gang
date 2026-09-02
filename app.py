@@ -56,7 +56,6 @@ if not st.session_state["logged_in"]:
 
 # --- 4. SIDEBAR NAVIGATION ---
 st.sidebar.caption(f"Logged in as **{st.session_state['nickname']}**")
-st.link_button("Go to my second website!", "https://streamlit.app")
 
 st.sidebar.markdown("**Profile Settings**")
 new_nick = st.sidebar.text_input("Change Nickname:", value=st.session_state["nickname"], label_visibility="collapsed")
