@@ -619,4 +619,470 @@ elif page == "🚀 Asteroid Dodge":
       frameCount++;
       if (frameCount % spawnRate === 0) spawnAsteroid();
 
-      for (let i = 0; i < asteroids.length;
+      for (let i = 0; i < asteroids.length; i++) {
+        let a = asteroids[i]; a.y += a.speed;
+        if (player.x < a.x + a.size && player.x + player.width > a.x && player.y < a.y + a.size && player.y + player.height > a.y) gameOver = true;
+        if (a.y > canvas.height) { asteroids.splice(i, 1); i--; score += 10; }
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#ff4b4b";
+      ctx.beginPath();
+      ctx.moveTo(player.x + player.width / 2, player.y);
+      ctx.lineTo(player.x, player.y + player.height);
+      ctx.lineTo(player.x + player.width, player.y + player.height);
+      ctx.closePath(); ctx.fill();
+
+      ctx.fillStyle = "#8b949e";
+      asteroids.forEach(a => {
+        ctx.beginPath(); ctx.arc(a.x + a.size / 2, a.y + a.size / 2, a.size / 2, 0, Math.PI * 2); ctx.fill();
+      });
+
+      ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif"; ctx.fillText("Score: " + score, 15, 25);
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.75)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ff4b4b"; ctx.font = "bold 28px sans-serif"; ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillStyle = "#ffffff"; ctx.font = "16px sans-serif";
+        ctx.fillText("Final Score: " + score, canvas.width / 2, canvas.height / 2 + 20);
+        ctx.fillText("Press 'R' to Play Again", canvas.width / 2, canvas.height / 2 + 50);
+        ctx.textAlign = "left";
+      }
+    }
+
+    function loop() { update(); draw(); if (!gameOver) requestAnimationFrame(loop); }
+    loop();
+  </script>
+</body>
+</html>"""
+    components.html(asteroid_game_html, height=520)
+
+# --- PAGE 6: PAC-MAN ARCADE ---
+elif page == "🟡 Pac-Man":
+    st.header("🟡 Pac-Man Ultra-Smooth Arcade Edition")
+    st.write("Chomp dots, grab Power Pellets, turn the tables on ghosts, and escape through the side tunnels!")
+
+    pacman_html = """<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background-color: #0e1117; color: white; font-family: 'Courier New', Courier, monospace; text-align: center; margin: 0; padding: 10px; }
+    #pacmanCanvas { background-color: #000000; border: 4px solid #1919a6; border-radius: 8px; display: block; margin: 0 auto; box-shadow: 0 0 15px #1919a6; }
+    .info { margin-top: 10px; font-size: 14px; color: #8b949e; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+
+  <canvas id="pacmanCanvas" width="570" height="450"></canvas>
+  <div class="info">Click screen, then use <b>Arrow Keys</b> or <b>WASD</b> to steer. Grab <b>Power Pellets</b> to eat ghosts! Press <b>R</b> to restart.</div>
+
+  <script>
+    const canvas = document.getElementById("pacmanCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const tileSize = 30;
+    const rows = 15;
+    const cols = 19;
+
+    const initialMap = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,3,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,3,1],
+      [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+      [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,0,1,1,4,1,1,0,1,0,1,1,0,1],
+      [2,0,2,2,0,1,0,1,2,2,2,1,0,1,0,2,2,0,2],
+      [1,0,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,1,1,0,1,0,1,1,1,0,1,1,0,1],
+      [1,0,0,1,0,0,0,0,0,2,0,0,0,0,0,1,0,0,1],
+      [1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1],
+      [1,3,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,3,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2]
+    ];
+
+    let map = [];
+    let score = 0;
+    let gameOver = false;
+    let gameWon = false;
+    let scaredTimer = 0;
+    let mouthAngle = 0.2;
+    let mouthOpening = true;
+
+    let countdown = 3;
+    let countdownActive = true;
+
+    const speed = 2.5; 
+    const ghostSpeed = 2.0;
+
+    let pacman = { x: 9 * tileSize + 15, y: 10 * tileSize + 15, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, angle: 0 };
+    let ghosts = [];
+
+    function startCountdown() {
+      countdown = 3;
+      countdownActive = true;
+      let interval = setInterval(() => {
+        countdown--;
+        if (countdown < 0) {
+          countdownActive = false;
+          clearInterval(interval);
+        }
+      }, 1000);
+    }
+
+    function initGame() {
+      score = 0;
+      gameOver = false;
+      gameWon = false;
+      scaredTimer = 0;
+      map = JSON.parse(JSON.stringify(initialMap));
+      pacman = { x: 9 * tileSize + 15, y: 10 * tileSize + 15, dirX: 0, dirY: 0, nextDirX: 0, nextDirY: 0, angle: 0 };
+      
+      ghosts = [
+        { name: "Blinky", x: 9 * tileSize + 15, y: 5 * tileSize + 15, color: "#ff0000", dirX: 1, dirY: 0, type: "chase" },
+        { name: "Pinky", x: 8 * tileSize + 15, y: 6 * tileSize + 15, color: "#ffb8ff", dirX: -1, dirY: 0, type: "ambush" },
+        { name: "Inky", x: 9 * tileSize + 15, y: 6 * tileSize + 15, color: "#00ffff", dirX: 0, dirY: -1, type: "random" },
+        { name: "Clyde", x: 10 * tileSize + 15, y: 6 * tileSize + 15, color: "#ffb852", dirX: 0, dirY: -1, type: "shy" }
+      ];
+
+      startCountdown();
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) e.preventDefault();
+
+      if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") {
+        pacman.nextDirX = -1; pacman.nextDirY = 0;
+      } else if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") {
+        pacman.nextDirX = 1; pacman.nextDirY = 0;
+      } else if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") {
+        pacman.nextDirX = 0; pacman.nextDirY = -1;
+      } else if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") {
+        pacman.nextDirX = 0; pacman.nextDirY = 1;
+      }
+
+      if ((gameOver || gameWon) && (e.key === "r" || e.key === "R")) {
+        initGame();
+      }
+    });
+
+    function isWallPixel(px, py) {
+      let gx = Math.floor(px / tileSize);
+      let gy = Math.floor(py / tileSize);
+      if (gy === 6 && (gx < 0 || gx >= cols)) return false;
+      if (gx < 0 || gx >= cols || gy < 0 || gy >= rows) return true;
+      return map[gy][gx] === 1 || map[gy][gx] === 4;
+    }
+
+    function canMovePixel(x, y, dx, dy, radius) {
+      let nextX = x + dx * speed;
+      let nextY = y + dy * speed;
+
+      return !(
+        isWallPixel(nextX - radius, nextY - radius) ||
+        isWallPixel(nextX + radius, nextY - radius) ||
+        isWallPixel(nextX - radius, nextY + radius) ||
+        isWallPixel(nextX + radius, nextY + radius)
+      );
+    }
+
+    function checkDotsRemaining() {
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          if (map[r][c] === 0 || map[r][c] === 3) return true;
+        }
+      }
+      return false;
+    }
+
+    function update() {
+      if (gameOver || gameWon || countdownActive) return;
+
+      if (mouthOpening) {
+        mouthAngle += 0.02;
+        if (mouthAngle >= 0.25) mouthOpening = false;
+      } else {
+        mouthAngle -= 0.02;
+        if (mouthAngle <= 0.01) mouthOpening = true;
+      }
+
+      if (scaredTimer > 0) scaredTimer -= 0.02;
+
+      let radius = 12;
+      let gridX = Math.floor(pacman.x / tileSize) * tileSize + 15;
+      let gridY = Math.floor(pacman.y / tileSize) * tileSize + 15;
+
+      if (pacman.nextDirX !== 0 || pacman.nextDirY !== 0) {
+        if (canMovePixel(pacman.x, pacman.y, pacman.nextDirX, pacman.nextDirY, radius)) {
+          if (pacman.nextDirX !== 0 && Math.abs(pacman.y - gridY) < 8) {
+            pacman.y = gridY;
+            pacman.dirX = pacman.nextDirX;
+            pacman.dirY = 0;
+          } else if (pacman.nextDirY !== 0 && Math.abs(pacman.x - gridX) < 8) {
+            pacman.x = gridX;
+            pacman.dirX = 0;
+            pacman.dirY = pacman.nextDirY;
+          }
+        }
+      }
+
+      if (canMovePixel(pacman.x, pacman.y, pacman.dirX, pacman.dirY, radius)) {
+        pacman.x += pacman.dirX * speed;
+        pacman.y += pacman.dirY * speed;
+
+        if (pacman.dirX === 1) pacman.angle = 0;
+        else if (pacman.dirX === -1) pacman.angle = Math.PI;
+        else if (pacman.dirY === -1) pacman.angle = 1.5 * Math.PI;
+        else if (pacman.dirY === 1) pacman.angle = 0.5 * Math.PI;
+
+        if (pacman.x < 0) pacman.x = cols * tileSize - 15;
+        else if (pacman.x > cols * tileSize) pacman.x = 15;
+      }
+
+      let tileGX = Math.floor(pacman.x / tileSize);
+      let tileGY = Math.floor(pacman.y / tileSize);
+
+      if (map[tileGY] && map[tileGY][tileGX] === 0) {
+        map[tileGY][tileGX] = 2;
+        score += 10;
+        if (!checkDotsRemaining()) gameWon = true;
+      } else if (map[tileGY] && map[tileGY][tileGX] === 3) {
+        map[tileGY][tileGX] = 2;
+        score += 50;
+        scaredTimer = 8;
+        if (!checkDotsRemaining()) gameWon = true;
+      }
+
+      ghosts.forEach(g => {
+        let gGX = Math.floor(g.x / tileSize);
+        let gGY = Math.floor(g.y / tileSize);
+        let gCenterX = gGX * tileSize + 15;
+        let gCenterY = gGY * tileSize + 15;
+
+        if (Math.abs(g.x - gCenterX) < 2 && Math.abs(g.y - gCenterY) < 2) {
+          g.x = gCenterX;
+          g.y = gCenterY;
+
+          let possibleDirs = [
+            { x: 1, y: 0 }, { x: -1, y: 0 }, { x: 0, y: 1 }, { x: 0, y: -1 }
+          ].filter(d => {
+            if (d.x === -g.dirX && d.y === -g.dirY) return false;
+            let nx = gGX + d.x, ny = gGY + d.y;
+            if (ny === 6 && (nx < 0 || nx >= cols)) return true;
+            return nx >= 0 && nx < cols && ny >= 0 && ny < rows && map[ny][nx] !== 1;
+          });
+
+          if (possibleDirs.length === 0) {
+            possibleDirs = [{ x: -g.dirX, y: -g.dirY }];
+          }
+
+          let targetX = pacman.x, targetY = pacman.y;
+          if (scaredTimer > 0) {
+            targetX = cols * tileSize - pacman.x;
+            targetY = rows * tileSize - pacman.y;
+          } else if (g.type === "ambush") {
+            targetX = pacman.x + pacman.dirX * 60;
+            targetY = pacman.y + pacman.dirY * 60;
+          } else if (g.type === "random") {
+            targetX = Math.random() * canvas.width;
+            targetY = Math.random() * canvas.height;
+          }
+
+          possibleDirs.sort((a, b) => {
+            let distA = Math.hypot((g.x + a.x * tileSize) - targetX, (g.y + a.y * tileSize) - targetY);
+            let distB = Math.hypot((g.x + b.x * tileSize) - targetX, (g.y + b.y * tileSize) - targetY);
+            return distA - distB;
+          });
+
+          g.dirX = possibleDirs[0].x;
+          g.dirY = possibleDirs[0].y;
+        }
+
+        let currentGhostSpeed = scaredTimer > 0 ? ghostSpeed * 0.6 : ghostSpeed;
+        g.x += g.dirX * currentGhostSpeed;
+        g.y += g.dirY * currentGhostSpeed;
+
+        if (g.x < 0) g.x = cols * tileSize - 15;
+        else if (g.x > cols * tileSize) g.x = 15;
+
+        let distToPacman = Math.hypot(g.x - pacman.x, g.y - pacman.y);
+        if (distToPacman < 18) {
+          if (scaredTimer > 0) {
+            score += 200;
+            g.x = 9 * tileSize + 15;
+            g.y = 6 * tileSize + 15;
+          } else {
+            gameOver = true;
+          }
+        }
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let cell = map[r][c];
+          let px = c * tileSize, py = r * tileSize;
+
+          if (cell === 1) {
+            ctx.fillStyle = "#1919a6";
+            ctx.fillRect(px + 2, py + 2, tileSize - 4, tileSize - 4);
+          } else if (cell === 4) {
+            ctx.fillStyle = "#ffb8ff";
+            ctx.fillRect(px, py + tileSize/2 - 2, tileSize, 4);
+          } else if (cell === 0) {
+            ctx.fillStyle = "#ffb8ae";
+            ctx.beginPath();
+            ctx.arc(px + tileSize/2, py + tileSize/2, 3, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (cell === 3) {
+            ctx.fillStyle = (Math.floor(Date.now() / 250) % 2 === 0) ? "#ffffff" : "#ffb8ae";
+            ctx.beginPath();
+            ctx.arc(px + tileSize/2, py + tileSize/2, 7, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      ctx.fillStyle = "#ffff00";
+      ctx.beginPath();
+      ctx.arc(pacman.x, pacman.y, tileSize / 2 - 2, pacman.angle + mouthAngle * Math.PI, pacman.angle + (2 - mouthAngle) * Math.PI);
+      ctx.lineTo(pacman.x, pacman.y);
+      ctx.fill();
+
+      ghosts.forEach(g => {
+        if (scaredTimer > 0) {
+          ctx.fillStyle = (scaredTimer < 2 && Math.floor(Date.now() / 150) % 2 === 0) ? "#ffffff" : "#2121ff";
+        } else {
+          ctx.fillStyle = g.color;
+        }
+
+        ctx.beginPath();
+        ctx.arc(g.x, g.y - 2, tileSize / 2 - 2, Math.PI, 0, false);
+        ctx.lineTo(g.x + tileSize / 2 - 2, g.y + tileSize / 2 - 2);
+        ctx.lineTo(g.x, g.y + tileSize / 2 - 6);
+        ctx.lineTo(g.x - tileSize / 2 + 2, g.y + tileSize / 2 - 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(g.x - 4, g.y - 3, 3, 0, Math.PI * 2);
+        ctx.arc(g.x + 4, g.y - 3, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = scaredTimer > 0 ? "#ffb8ae" : "#000000";
+        ctx.beginPath();
+        ctx.arc(g.x - 4 + g.dirX * 1.5, g.y - 3 + g.dirY * 1.5, 1.5, 0, Math.PI * 2);
+        ctx.arc(g.x + 4 + g.dirX * 1.5, g.y - 3 + g.dirY * 1.5, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px 'Courier New', Courier, monospace";
+      ctx.fillText("1UP SCORE", 20, 435);
+      ctx.fillStyle = "#ffff00";
+      ctx.fillText(score, 120, 435);
+
+      if (scaredTimer > 0) {
+        ctx.fillStyle = "#00ffff";
+        ctx.fillText("POWER MODE!", 380, 435);
+      }
+
+      if (countdownActive) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#ffff00";
+        ctx.font = "bold 55px 'Courier New', Courier, monospace";
+        if (countdown > 0) {
+          ctx.fillText(countdown, canvas.width / 2, canvas.height / 2 + 15);
+        } else {
+          ctx.fillStyle = "#00ff00";
+          ctx.fillText("READY!", canvas.width / 2, canvas.height / 2 + 15);
+        }
+        ctx.textAlign = "left";
+      }
+
+      if (gameOver || gameWon) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.textAlign = "center";
+        if (gameOver) {
+          ctx.fillStyle = "#ff0000";
+          ctx.font = "bold 34px 'Courier New', Courier, monospace";
+          ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
+        } else {
+          ctx.fillStyle = "#00ff00";
+          ctx.font = "bold 34px 'Courier New', Courier, monospace";
+          ctx.fillText("VICTORY!", canvas.width / 2, canvas.height / 2 - 10);
+        }
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "16px sans-serif";
+        ctx.fillText("Final Score: " + score, canvas.width / 2, canvas.height / 2 + 30);
+        ctx.fillText("Press 'R' to Play Again", canvas.width / 2, canvas.height / 2 + 65);
+        ctx.textAlign = "left";
+      }
+    }
+
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    initGame();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
+"""
+    components.html(pacman_html, height=520)
+
+# --- PAGE 7: FEATURE REQUESTS ---
+elif page == "💡 Feature Requests":
+    is_admin = st.session_state["nickname"].strip().lower() in ["pranav", "calvin"]
+    
+    if is_admin:
+        admin_name = st.session_state["nickname"].strip().capitalize()
+        st.header(f"👑 {admin_name}'s Feature Request Dashboard")
+        st.write("Here are all the features requested by the gang:")
+        
+        if not st.session_state["feature_requests"]:
+            st.info("No feature requests submitted yet.")
+        else:
+            for i, req in enumerate(st.session_state["feature_requests"]):
+                with st.expander(f"📌 Request #{i+1} by {req['sender']} ({req['time']})"):
+                    st.write(req['text'])
+                    if st.button("Delete Request", key=f"del_req_{i}"):
+                        del st.session_state["feature_requests"][i]
+                        st.success("Request deleted!")
+                        st.rerun()
+    else:
+        st.header("💡 Request a Feature")
+        st.write("Got a cool idea for the Goofy Gang Portal? Let Pranav & Calvin know below!")
+        
+        with st.form("feature_form", clear_on_submit=True):
+            user_request = st.text_area("What feature would you like to see added?")
+            submitted = st.form_submit_button("Submit Request")
+            
+            if submitted:
+                if user_request.strip():
+                    time_str = datetime.now().strftime("%B %d, %Y - %I:%M %p")
+                    st.session_state["feature_requests"].append({
+                        "sender": st.session_state["nickname"],
+                        "text": user_request.strip(),
+                        "time": time_str
+                    })
+                    st.success("Your feature request has been sent straight to Pranav & Calvin!")
+                else:
+                    st.warning("Please type something before submitting.")
