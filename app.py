@@ -622,7 +622,7 @@ elif page == "🚀 Asteroid Dodge":
       for (let i = 0; i < asteroids.length; i++) {
         let a = asteroids[i]; a.y += a.speed;
         if (player.x < a.x + a.size && player.x + player.width > a.x && player.y < a.y + a.size && player.y + player.height > a.y) gameOver = true;
-        if (a.y > canvas.height) { asteroids.splice(i, 1); i--; score += 10; }
+        if (a.y > canvas.height) { asteroids.splice(i, 1); i--; score += 1; }
       }
     }
 
