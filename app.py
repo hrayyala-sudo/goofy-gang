@@ -75,7 +75,6 @@ if st.sidebar.button("Save Nickname"):
 st.sidebar.divider()
 st.sidebar.markdown("**Pages**")
 
-# Build navigation list dynamically
 pages_list = [
     "💬 Goofy Chatbox", 
     "🎲 Guessing Game", 
@@ -91,18 +90,15 @@ pages_list = [
 if st.session_state["nickname"].strip().lower() == "calvin":
     pages_list.append("👑 Admin Controls")
 
-# Keep active page valid
 if st.session_state["active_page"] not in pages_list:
     st.session_state["active_page"] = pages_list[0]
 
-# Ensure the key for nav_radio is aligned with active_page
 if "nav_radio" not in st.session_state or st.session_state["nav_radio"] not in pages_list:
     st.session_state["nav_radio"] = st.session_state["active_page"]
 
 def on_nav_change():
     st.session_state["active_page"] = st.session_state["nav_radio"]
 
-# Render navigation radio
 page = st.sidebar.radio(
     "Navigation",
     pages_list,
@@ -140,11 +136,11 @@ if st.session_state["show_secret_game"]:
   <style>
     body { background-color: #0e1117; color: white; font-family: 'Courier New', Courier, monospace; text-align: center; margin: 0; padding: 10px; }
     .game-container { display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 10px; }
-    #tetrisCanvas { background-color: #000; border: 3px solid #ff4b4b; border-radius: 6px; box-shadow: 0 0 12px rgba(255, 75, 75, 0.4); }
-    .sidebar-panel { background: #161b22; border: 2px solid #30363d; border-radius: 8px; padding: 15px; width: 140px; text-align: left; }
+    #tetrisCanvas { background-color: #000; border: 3px solid #ff4b4b; border-radius: 6px; box-shadow: 0 0 12px rgba(255, 75, 75, 0.4); width: 200px; height: 350px; display: block; }
+    .sidebar-panel { background: #161b22; border: 2px solid #30363d; border-radius: 8px; padding: 15px; width: 140px; text-align: left; box-sizing: border-box; }
     .panel-title { font-size: 14px; color: #8b949e; text-transform: uppercase; margin-bottom: 5px; }
     .panel-value { font-size: 22px; font-weight: bold; color: #00ff00; margin-bottom: 15px; }
-    #nextCanvas { background: #000; border: 1px solid #30363d; border-radius: 4px; }
+    #nextCanvas { background: #000; border: 1px solid #30363d; border-radius: 4px; display: block; width: 80px; height: 80px; }
     .controls-info { margin-top: 15px; font-size: 13px; color: #8b949e; font-family: sans-serif; }
   </style>
 </head>
@@ -407,7 +403,7 @@ if st.session_state["show_secret_game"]:
 </body>
 </html>
 """
-    components.html(tetris_html, height=500)
+    components.html(tetris_html, height=480)
     st.divider()
 
 # --- PAGE 1: GOOFY CHATBOX ---
@@ -418,7 +414,6 @@ if page == "💬 Goofy Chatbox":
     if st.button("🔄 Refresh Messages"):
         st.rerun()
 
-    # Calvin Chat Moderation (Delete Messages Only)
     if st.session_state["nickname"].strip().lower() == "calvin":
         with st.expander("👑 Calvin's Chat Moderation", expanded=False):
             if global_chat:
@@ -1114,7 +1109,6 @@ elif page == "📊 Gang Polls":
                 for opt, count in poll["options"].items():
                     st.metric(label=opt, value=f"{count} votes")
             
-            # Calvin or poll creator can shut down / delete the poll
             if user.lower() == "calvin" or poll["creator"].lower() == user.lower():
                 if st.button(f"🗑️ Shut Down / Delete Poll #{idx+1}", key=f"del_poll_{idx}"):
                     st.session_state["polls"].pop(idx)
@@ -1127,7 +1121,6 @@ elif page == "👑 Admin Controls" and st.session_state["nickname"].strip().lowe
     st.header("👑 Calvin's Admin Controls")
     st.write("Manage portal security, user bans, and moderation settings.")
     
-    # Password Change Section
     st.subheader("🔐 Change Portal Password")
     new_pass = st.text_input("New Portal Password:", type="password")
     if st.button("Update Password"):
@@ -1146,7 +1139,7 @@ elif page == "👑 Admin Controls" and st.session_state["nickname"].strip().lowe
         if st.button("Ban User", type="primary"):
             if user_to_ban:
                 st.session_state["banned_users"].append(user_to_ban)
-                st.success(f"User '{user_to_ban}' has been banned.")
+                st.success(f"User '{user_to_ban}' has-been banned.")
                 st.rerun()
     else:
         st.caption("No additional active users available to ban.")
