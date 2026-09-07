@@ -7,7 +7,7 @@ from datetime import datetime
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="wide")
 
 # Allowed Users
-ALLOWED_USERS = ["pranav", "calvin", "austin", "goofy member"]
+ALLOWED_USERS = ["pranav", "calvin", "austin", "isaac", "george", "fox", "isaiah"]
 
 # Initialize Base Session State
 if "portal_password" not in st.session_state:
@@ -26,6 +26,12 @@ if "banned_users" not in st.session_state:
     st.session_state["banned_users"] = []
 if "polls" not in st.session_state:
     st.session_state["polls"] = []
+
+# Handle query param toggle for Tetris (seamless text-sized link trigger)
+if st.query_params.get("toggle_tetris") == "true":
+    st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
+    st.query_params.clear()
+    st.rerun()
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -117,36 +123,13 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN HEADER WITH TITLE-SIZED INVISIBLE TETRIS BUTTON ---
+# --- 5. MAIN HEADER WITH TEXT-SIZED INVISIBLE TETRIS LINK ---
 st.markdown("""
-<style>
-section[data-testid="stMain"] div[data-testid="column"]:first-child button {
-    background-color: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    font-size: 2.25rem !important;
-    padding: 0px !important;
-    margin-top: -2px !important;
-    min-height: unset !important;
-    cursor: pointer;
-}
-section[data-testid="stMain"] div[data-testid="column"]:first-child button:hover {
-    background-color: transparent !important;
-    border: none !important;
-    opacity: 0.7;
-}
-</style>
+<div style="display: flex; align-items: center; gap: 12px; margin-top: -10px; margin-bottom: 20px;">
+    <a href="?toggle_tetris=true" style="font-size: 2.25rem; text-decoration: none; line-height: 1; cursor: pointer;" title="Click to open Secret Tetris!">🤪</a>
+    <h1 style="margin: 0; padding: 0; font-size: 2.25rem; font-weight: 700; color: inherit;">Goofy Gang Dashboard</h1>
+</div>
 """, unsafe_allow_html=True)
-
-title_col1, title_col2 = st.columns([0.07, 0.93])
-
-with title_col1:
-    if st.button("🤪", key="boss_toggle_btn", help="Click to open Secret Tetris!"):
-        st.session_state["show_secret_game"] = not st.session_state["show_secret_game"]
-        st.rerun()
-
-with title_col2:
-    st.title("Goofy Gang Dashboard")
 
 st.markdown("---")
 
