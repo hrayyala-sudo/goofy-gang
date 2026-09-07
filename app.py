@@ -6,11 +6,12 @@ from datetime import datetime
 # --- 1. PAGE SETUP ---
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="wide")
 
-# Allowed Users & Password
+# Allowed Users
 ALLOWED_USERS = ["pranav", "calvin", "austin", "goofy member"]
-CORRECT_PASSWORD = "goofy123"
 
 # Initialize Base Session State
+if "portal_password" not in st.session_state:
+    st.session_state["portal_password"] = "goofy123"
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
 if "nickname" not in st.session_state:
@@ -23,6 +24,8 @@ if "feature_requests" not in st.session_state:
     st.session_state["feature_requests"] = []
 if "banned_users" not in st.session_state:
     st.session_state["banned_users"] = []
+if "polls" not in st.session_state:
+    st.session_state["polls"] = []
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -45,7 +48,7 @@ def show_login_screen():
             clean_username = user_input.strip().lower()
             if clean_username in st.session_state["banned_users"]:
                 st.error("🚫 You have been banned from the portal by Calvin!")
-            elif clean_username in ALLOWED_USERS and pass_input == CORRECT_PASSWORD:
+            elif clean_username in ALLOWED_USERS and pass_input == st.session_state["portal_password"]:
                 st.session_state["logged_in"] = True
                 st.session_state["nickname"] = user_input.strip()
                 st.success(f"Welcome, {user_input.strip()}!")
@@ -72,8 +75,21 @@ if st.sidebar.button("Save Nickname"):
 st.sidebar.divider()
 st.sidebar.markdown("**Pages**")
 
-# Build navigation list
-pages_list = ["💬 Goofy Chatbox", "🎲 Guessing Game", "❌ Tic-Tac-Toe", "🪨 Rock Paper Scissors", "🚀 Asteroid Dodge", "🟡 Pac-Man", "💡 Feature Requests"]
+# Build navigation list dynamically
+pages_list = [
+    "💬 Goofy Chatbox", 
+    "🎲 Guessing Game", 
+    "❌ Tic-Tac-Toe", 
+    "🪨 Rock Paper Scissors", 
+    "🚀 Asteroid Dodge", 
+    "🟡 Pac-Man", 
+    "💡 Feature Requests",
+    "🎨 Goofy Sketchpad",
+    "📊 Gang Polls"
+]
+
+if st.session_state["nickname"].strip().lower() == "calvin":
+    pages_list.append("👑 Admin Controls")
 
 # Keep active page valid
 if st.session_state["active_page"] not in pages_list:
@@ -101,27 +117,28 @@ if st.sidebar.button("Logout"):
     st.session_state["nickname"] = ""
     st.rerun()
 
-# --- 5. MAIN HEADER WITH BLENDING EMOJI BUTTON ---
+# --- 5. MAIN HEADER WITH TITLE-SIZED INVISIBLE TETRIS BUTTON ---
 st.markdown("""
 <style>
 section[data-testid="stMain"] div[data-testid="column"]:first-child button {
     background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    font-size: 48px !important;
+    font-size: 2.25rem !important;
     padding: 0px !important;
-    width: auto !important;
-    height: auto !important;
+    margin-top: -2px !important;
     min-height: unset !important;
+    cursor: pointer;
 }
 section[data-testid="stMain"] div[data-testid="column"]:first-child button:hover {
-    background-color: rgba(255, 255, 255, 0.08) !important;
+    background-color: transparent !important;
     border: none !important;
+    opacity: 0.7;
 }
 </style>
 """, unsafe_allow_html=True)
 
-title_col1, title_col2 = st.columns([0.15, 0.85])
+title_col1, title_col2 = st.columns([0.07, 0.93])
 
 with title_col1:
     if st.button("🤪", key="boss_toggle_btn", help="Click to open Secret Tetris!"):
@@ -421,11 +438,9 @@ if page == "💬 Goofy Chatbox":
     if st.button("🔄 Refresh Messages"):
         st.rerun()
 
-    # --- CALVIN MODERATION CONTROLS ---
+    # Calvin Chat Moderation (Delete Messages Only)
     if st.session_state["nickname"].strip().lower() == "calvin":
-        with st.expander("👑 Calvin's Admin Chat & Ban Controls", expanded=True):
-            st.write("Manage chat messages and user bans/unbans below:")
-            
+        with st.expander("👑 Calvin's Chat Moderation", expanded=False):
             if global_chat:
                 col_del_spec, col_del_all = st.columns([2, 1])
                 
@@ -447,34 +462,6 @@ if page == "💬 Goofy Chatbox":
                         st.rerun()
             else:
                 st.caption("No active messages to moderate.")
-
-            st.divider()
-            st.markdown("**User Ban & Unban Management**")
-            
-            bannable_users = [u for u in ALLOWED_USERS if u != "calvin" and u not in st.session_state["banned_users"]]
-            if bannable_users:
-                user_to_ban = st.selectbox("Select user to ban:", bannable_users, key="ban_user_select")
-                if st.button("Ban User", type="primary"):
-                    if user_to_ban:
-                        st.session_state["banned_users"].append(user_to_ban)
-                        st.success(f"User '{user_to_ban}' has been banned.")
-                        st.rerun()
-            else:
-                st.caption("No additional active users available to ban.")
-
-            if st.session_state["banned_users"]:
-                st.write("Currently Banned Users:")
-                for b_user in st.session_state["banned_users"]:
-                    col_b1, col_b2 = st.columns([2, 1])
-                    with col_b1:
-                        st.text(b_user)
-                    with col_b2:
-                        if st.button(f"Unban {b_user}", key=f"unban_{b_user}"):
-                            st.session_state["banned_users"].remove(b_user)
-                            st.success(f"User '{b_user}' has been unbanned.")
-                            st.rerun()
-            else:
-                st.caption("No users are currently banned.")
 
     chat_container = st.container()
     with chat_container:
@@ -892,25 +879,31 @@ elif page == "🟡 Pac-Man":
             targetY = Math.random() * canvas.height;
           }
 
-          possibleDirs.sort((a, b) => {
-            let distA = Math.hypot((g.x + a.x * tileSize) - targetX, (g.y + a.y * tileSize) - targetY);
-            let distB = Math.hypot((g.x + b.x * tileSize) - targetX, (g.y + b.y * tileSize) - targetY);
-            return distA - distB;
+          let bestDir = possibleDirs[0];
+          let minDst = 999999;
+          possibleDirs.forEach(d => {
+            let nextCenterX = gCenterX + d.x * tileSize;
+            let nextCenterY = gCenterY + d.y * tileSize;
+            let dst = Math.hypot(nextCenterX - targetX, nextCenterY - targetY);
+            if (scaredTimer > 0) dst = -dst; 
+            if (dst < minDst) {
+              minDst = dst;
+              bestDir = d;
+            }
           });
 
-          g.dirX = possibleDirs[0].x;
-          g.dirY = possibleDirs[0].y;
+          g.dirX = bestDir.x;
+          g.dirY = bestDir.y;
         }
 
-        let currentGhostSpeed = scaredTimer > 0 ? ghostSpeed * 0.6 : ghostSpeed;
-        g.x += g.dirX * currentGhostSpeed;
-        g.y += g.dirY * currentGhostSpeed;
+        g.x += g.dirX * ghostSpeed;
+        g.y += g.dirY * ghostSpeed;
 
         if (g.x < 0) g.x = cols * tileSize - 15;
         else if (g.x > cols * tileSize) g.x = 15;
 
-        let distToPacman = Math.hypot(g.x - pacman.x, g.y - pacman.y);
-        if (distToPacman < 18) {
+        let distToPacman = Math.hypot(pacman.x - g.x, pacman.y - g.y);
+        if (distToPacman < 20) {
           if (scaredTimer > 0) {
             score += 200;
             g.x = 9 * tileSize + 15;
@@ -927,109 +920,80 @@ elif page == "🟡 Pac-Man":
 
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          let cell = map[r][c];
-          let px = c * tileSize, py = r * tileSize;
-
-          if (cell === 1) {
+          let tile = map[r][c];
+          if (tile === 1) {
             ctx.fillStyle = "#1919a6";
-            ctx.fillRect(px + 2, py + 2, tileSize - 4, tileSize - 4);
-          } else if (cell === 4) {
-            ctx.fillStyle = "#ffb8ff";
-            ctx.fillRect(px, py + tileSize/2 - 2, tileSize, 4);
-          } else if (cell === 0) {
+            ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+          } else if (tile === 0) {
             ctx.fillStyle = "#ffb8ae";
             ctx.beginPath();
-            ctx.arc(px + tileSize/2, py + tileSize/2, 3, 0, Math.PI * 2);
+            ctx.arc(c * tileSize + 15, r * tileSize + 15, 3.5, 0, Math.PI * 2);
             ctx.fill();
-          } else if (cell === 3) {
-            ctx.fillStyle = (Math.floor(Date.now() / 250) % 2 === 0) ? "#ffffff" : "#ffb8ae";
+          } else if (tile === 3) {
+            ctx.fillStyle = "#ffb8ae";
             ctx.beginPath();
-            ctx.arc(px + tileSize/2, py + tileSize/2, 7, 0, Math.PI * 2);
+            ctx.arc(c * tileSize + 15, r * tileSize + 15, 7, 0, Math.PI * 2);
             ctx.fill();
+          } else if (tile === 4) {
+            ctx.fillStyle = "#444";
+            ctx.fillRect(c * tileSize, r * tileSize + 12, tileSize, 6);
           }
         }
       }
 
+      ctx.save();
+      ctx.translate(pacman.x, pacman.y);
+      ctx.rotate(pacman.angle);
       ctx.fillStyle = "#ffff00";
       ctx.beginPath();
-      ctx.arc(pacman.x, pacman.y, tileSize / 2 - 2, pacman.angle + mouthAngle * Math.PI, pacman.angle + (2 - mouthAngle) * Math.PI);
-      ctx.lineTo(pacman.x, pacman.y);
+      ctx.arc(0, 0, 12, mouthAngle, Math.PI * 2 - mouthAngle);
+      ctx.lineTo(0, 0);
       ctx.fill();
+      ctx.restore();
 
       ghosts.forEach(g => {
-        if (scaredTimer > 0) {
-          ctx.fillStyle = (scaredTimer < 2 && Math.floor(Date.now() / 150) % 2 === 0) ? "#ffffff" : "#2121ff";
-        } else {
-          ctx.fillStyle = g.color;
-        }
-
+        ctx.fillStyle = scaredTimer > 0 ? "#2121ff" : g.color;
         ctx.beginPath();
-        ctx.arc(g.x, g.y - 2, tileSize / 2 - 2, Math.PI, 0, false);
-        ctx.lineTo(g.x + tileSize / 2 - 2, g.y + tileSize / 2 - 2);
-        ctx.lineTo(g.x, g.y + tileSize / 2 - 6);
-        ctx.lineTo(g.x - tileSize / 2 + 2, g.y + tileSize / 2 - 2);
+        ctx.arc(g.x, g.y - 2, 11, Math.PI, 0, false);
+        ctx.lineTo(g.x + 11, g.y + 11);
+        ctx.lineTo(g.x - 11, g.y + 11);
         ctx.closePath();
-        ctx.fill();
-
-        ctx.fillStyle = "#ffffff";
-        ctx.beginPath();
-        ctx.arc(g.x - 4, g.y - 3, 3, 0, Math.PI * 2);
-        ctx.arc(g.x + 4, g.y - 3, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = scaredTimer > 0 ? "#ffb8ae" : "#000000";
-        ctx.beginPath();
-        ctx.arc(g.x - 4 + g.dirX * 1.5, g.y - 3 + g.dirY * 1.5, 1.5, 0, Math.PI * 2);
-        ctx.arc(g.x + 4 + g.dirX * 1.5, g.y - 3 + g.dirY * 1.5, 1.5, 0, Math.PI * 2);
         ctx.fill();
       });
 
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 16px 'Courier New', Courier, monospace";
-      ctx.fillText("1UP SCORE", 20, 435);
-      ctx.fillStyle = "#ffff00";
-      ctx.fillText(score, 120, 435);
-
-      if (scaredTimer > 0) {
-        ctx.fillStyle = "#00ffff";
-        ctx.fillText("POWER MODE!", 380, 435);
-      }
+      ctx.fillStyle = "white";
+      ctx.font = "bold 16px Courier New";
+      ctx.fillText("SCORE: " + score, 15, 435);
 
       if (countdownActive) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(0,0,0,0.7)";
+        ctx.fillRect(0,0, canvas.width, canvas.height);
         ctx.fillStyle = "#ffff00";
-        ctx.font = "bold 55px 'Courier New', Courier, monospace";
-        if (countdown > 0) {
-          ctx.fillText(countdown, canvas.width / 2, canvas.height / 2 + 15);
-        } else {
-          ctx.fillStyle = "#00ff00";
-          ctx.fillText("READY!", canvas.width / 2, canvas.height / 2 + 15);
-        }
-        ctx.textAlign = "left";
-      }
-
-      if (gameOver || gameWon) {
-        ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
+        ctx.font = "bold 40px Courier New";
         ctx.textAlign = "center";
-        if (gameOver) {
-          ctx.fillStyle = "#ff0000";
-          ctx.font = "bold 34px 'Courier New', Courier, monospace";
-          ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
-        } else {
-          ctx.fillStyle = "#00ff00";
-          ctx.font = "bold 34px 'Courier New', Courier, monospace";
-          ctx.fillText("VICTORY!", canvas.width / 2, canvas.height / 2 - 10);
-        }
-
+        ctx.fillText(countdown === 0 ? "READY!" : countdown, canvas.width / 2, canvas.height / 2);
+        ctx.textAlign = "left";
+      } else if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillRect(0,0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ff0000";
+        ctx.font = "bold 30px Courier New";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 10);
         ctx.fillStyle = "#ffffff";
-        ctx.font = "16px sans-serif";
-        ctx.fillText("Final Score: " + score, canvas.width / 2, canvas.height / 2 + 30);
-        ctx.fillText("Press 'R' to Play Again", canvas.width / 2, canvas.height / 2 + 65);
+        ctx.font = "16px Courier New";
+        ctx.fillText("Press 'R' to Restart", canvas.width / 2, canvas.height / 2 + 25);
+        ctx.textAlign = "left";
+      } else if (gameWon) {
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillRect(0,0, canvas.width, canvas.height);
+        ctx.fillStyle = "#00ff00";
+        ctx.font = "bold 30px Courier New";
+        ctx.textAlign = "center";
+        ctx.fillText("YOU WIN!", canvas.width / 2, canvas.height / 2 - 10);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "16px Courier New";
+        ctx.fillText("Press 'R' to Play Again", canvas.width / 2, canvas.height / 2 + 25);
         ctx.textAlign = "left";
       }
     }
@@ -1041,48 +1005,182 @@ elif page == "🟡 Pac-Man":
     }
 
     initGame();
-    requestAnimationFrame(gameLoop);
+    gameLoop();
   </script>
 </body>
 </html>
 """
-    components.html(pacman_html, height=520)
+    components.html(pacman_html, height=480)
 
 # --- PAGE 7: FEATURE REQUESTS ---
 elif page == "💡 Feature Requests":
-    is_admin = st.session_state["nickname"].strip().lower() in ["pranav", "calvin"]
+    st.header("💡 Feature Requests")
+    st.write("Got an idea for a new game or feature? Submit it below for Calvin and the team to review!")
     
-    if is_admin:
-        admin_name = st.session_state["nickname"].strip().capitalize()
-        st.header(f"👑 {admin_name}'s Feature Request Dashboard")
-        st.write("Here are all the features requested by the gang:")
-        
-        if not st.session_state["feature_requests"]:
-            st.info("No feature requests submitted yet.")
+    feature_input = st.text_input("Suggest a new game or feature:")
+    if st.button("Submit Request"):
+        if feature_input.strip():
+            st.session_state["feature_requests"].append({
+                "user": st.session_state["nickname"],
+                "text": feature_input
+            })
+            st.success("Feature request logged successfully!")
         else:
-            for i, req in enumerate(st.session_state["feature_requests"]):
-                with st.expander(f"📌 Request #{i+1} by {req['sender']} ({req['time']})"):
-                    st.write(req['text'])
-                    if st.button("Delete Request", key=f"del_req_{i}"):
-                        del st.session_state["feature_requests"][i]
-                        st.success("Request deleted!")
-                        st.rerun()
-    else:
-        st.header("💡 Request a Feature")
-        st.write("Got a cool idea for the Goofy Gang Portal? Let Pranav & Calvin know below!")
+            st.warning("Please type a description first.")
+
+    if st.session_state["feature_requests"]:
+        st.markdown("#### Submitted Feature Ideas")
+        for idx, req in enumerate(st.session_state["feature_requests"], 1):
+            st.markdown(f"{idx}. **{req['user']}**: {req['text']}")
+
+# --- PAGE 8: GOOFY SKETCHPAD ---
+elif page == "🎨 Goofy Sketchpad":
+    st.header("🎨 Goofy Sketchpad")
+    st.write("Draw something goofy and share your masterpiece with the gang!")
+    
+    sketch_html = """<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background-color: #0e1117; color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 10px; }
+    #drawCanvas { background-color: #ffffff; border: 2px solid #30363d; border-radius: 8px; cursor: crosshair; display: block; margin: 0 auto; }
+    .toolbar { margin-top: 10px; }
+    button, select { padding: 6px 12px; margin: 0 4px; border-radius: 4px; border: none; background: #238636; color: white; font-weight: bold; cursor: pointer; }
+    button.clear { background: #da3633; }
+  </style>
+</head>
+<body>
+  <canvas id="drawCanvas" width="500" height="350"></canvas>
+  <div class="toolbar">
+    <label>Color: <input type="color" id="colorPicker" value="#000000"></label>
+    <label>Size: <input type="range" id="brushSize" min="1" max="20" value="5"></label>
+    <button class="clear" onclick="clearCanvas()">Clear Pad</button>
+  </div>
+  <script>
+    const canvas = document.getElementById("drawCanvas");
+    const ctx = canvas.getContext("2d");
+    let painting = false;
+
+    function startPosition(e) { painting = true; draw(e); }
+    function endPosition() { painting = false; ctx.beginPath(); }
+    function clearCanvas() { ctx.clearRect(0, 0, canvas.width, canvas.height); }
+
+    function draw(e) {
+      if (!painting) return;
+      ctx.lineWidth = document.getElementById("brushSize").value;
+      ctx.lineCap = "round";
+      ctx.strokeStyle = document.getElementById("colorPicker").value;
+
+      const rect = canvas.getBoundingClientRect();
+      ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+    }
+
+    canvas.addEventListener("mousedown", startPosition);
+    canvas.addEventListener("mouseup", endPosition);
+    canvas.addEventListener("mousemove", draw);
+  </script>
+</body>
+</html>"""
+    components.html(sketch_html, height=460)
+
+# --- PAGE 9: GANG POLLS ---
+elif page == "📊 Gang Polls":
+    st.header("📊 Gang Polls")
+    st.write("Create a poll or vote on community questions!")
+
+    with st.expander("➕ Create a New Poll", expanded=False):
+        poll_q = st.text_input("Poll Question:")
+        opt1 = st.text_input("Option 1:")
+        opt2 = st.text_input("Option 2:")
+        opt3 = st.text_input("Option 3 (Optional):")
         
-        with st.form("feature_form", clear_on_submit=True):
-            user_request = st.text_area("What feature would you like to see added?")
-            submitted = st.form_submit_button("Submit Request")
+        if st.button("Publish Poll"):
+            if poll_q.strip() and opt1.strip() and opt2.strip():
+                options_dict = {opt1.strip(): 0, opt2.strip(): 0}
+                if opt3.strip():
+                    options_dict[opt3.strip()] = 0
+                st.session_state["polls"].append({
+                    "question": poll_q.strip(),
+                    "options": options_dict,
+                    "voted": [],
+                    "creator": st.session_state["nickname"]
+                })
+                st.success("Poll published successfully!")
+                st.rerun()
+            else:
+                st.warning("Please provide a question and at least two options.")
+
+    st.divider()
+    st.subheader("Active Polls")
+    if not st.session_state["polls"]:
+        st.info("No active polls right now. Create one above!")
+    else:
+        for idx, poll in enumerate(st.session_state["polls"]):
+            st.markdown(f"**Q{idx+1}: {poll['question']}** *(Created by {poll['creator']})*")
             
-            if submitted:
-                if user_request.strip():
-                    time_str = datetime.now().strftime("%B %d, %Y - %I:%M %p")
-                    st.session_state["feature_requests"].append({
-                        "sender": st.session_state["nickname"],
-                        "text": user_request.strip(),
-                        "time": time_str
-                    })
-                    st.success("Your feature request has been sent straight to Pranav & Calvin!")
-                else:
-                    st.warning("Please type something before submitting.")
+            user = st.session_state["nickname"]
+            if user not in poll["voted"]:
+                choice = st.radio(f"Choose option for poll {idx+1}:", list(poll["options"].keys()), key=f"poll_radio_{idx}")
+                if st.button(f"Submit Vote #{idx+1}", key=f"vote_btn_{idx}"):
+                    poll["options"][choice] += 1
+                    poll["voted"].append(user)
+                    st.success("Vote recorded!")
+                    st.rerun()
+            else:
+                st.info("You have voted on this poll. Live Results:")
+                for opt, count in poll["options"].items():
+                    st.metric(label=opt, value=f"{count} votes")
+            
+            # Calvin or poll creator can shut down / delete the poll
+            if user.lower() == "calvin" or poll["creator"].lower() == user.lower():
+                if st.button(f"🗑️ Shut Down / Delete Poll #{idx+1}", key=f"del_poll_{idx}"):
+                    st.session_state["polls"].pop(idx)
+                    st.success("Poll shut down and deleted!")
+                    st.rerun()
+            st.divider()
+
+# --- PAGE 10: ADMIN CONTROLS (CALVIN ONLY) ---
+elif page == "👑 Admin Controls" and st.session_state["nickname"].strip().lower() == "calvin":
+    st.header("👑 Calvin's Admin Controls")
+    st.write("Manage portal security, user bans, and moderation settings.")
+    
+    # Password Change Section
+    st.subheader("🔐 Change Portal Password")
+    new_pass = st.text_input("New Portal Password:", type="password")
+    if st.button("Update Password"):
+        if new_pass.strip():
+            st.session_state["portal_password"] = new_pass.strip()
+            st.success("Portal password updated successfully!")
+        else:
+            st.warning("Password cannot be empty.")
+
+    st.divider()
+    st.subheader("🚫 User Ban & Unban Management")
+    
+    bannable_users = [u for u in ALLOWED_USERS if u != "calvin" and u not in st.session_state["banned_users"]]
+    if bannable_users:
+        user_to_ban = st.selectbox("Select user to ban:", bannable_users, key="admin_ban_select")
+        if st.button("Ban User", type="primary"):
+            if user_to_ban:
+                st.session_state["banned_users"].append(user_to_ban)
+                st.success(f"User '{user_to_ban}' has been banned.")
+                st.rerun()
+    else:
+        st.caption("No additional active users available to ban.")
+
+    if st.session_state["banned_users"]:
+        st.write("Currently Banned Users:")
+        for b_user in st.session_state["banned_users"]:
+            col_b1, col_b2 = st.columns([2, 1])
+            with col_b1:
+                st.text(b_user)
+            with col_b2:
+                if st.button(f"Unban {b_user}", key=f"unban_{b_user}"):
+                    st.session_state["banned_users"].remove(b_user)
+                    st.success(f"User '{b_user}' has been unbanned.")
+                    st.rerun()
+    else:
+        st.caption("No users are currently banned.")
