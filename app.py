@@ -7,7 +7,7 @@ from datetime import datetime
 st.set_page_config(page_title="Goofy Gang Portal", page_icon="🤪", layout="wide")
 
 # Allowed Users
-ALLOWED_USERS = ["pranav", "calvin", "austin", "goofy member"]
+ALLOWED_USERS = ["pranav", "calvin", "austin", "isaac", "george", "isaiah", "fox"]
 
 # Initialize Base Session State
 if "portal_password" not in st.session_state:
