@@ -2,8 +2,8 @@ name: Wake Streamlit App
 
 on:
   schedule:
-    - cron: "0 */4 * * *" # Runs every 4 hours
-  workflow_dispatch: # Allows manual triggering
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
 
 jobs:
   wake-app:
@@ -12,6 +12,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up Chrome
+        uses: browser-actions/setup-chrome@v1
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -19,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install selenium
+          pip install selenium webdriver-manager
 
       - name: Run wake script
         run: python wake.py
