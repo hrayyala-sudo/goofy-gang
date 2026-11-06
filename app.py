@@ -393,4 +393,49 @@ if st.session_state["show_secret_game"]:
     components.html(tetris_html, height=460)
 
 # --- 6. PAGE ROUTER ---
-st.write(f"### Currently Viewing: {st.session_state['active_page']}")
+active_page = st.session_state["active_page"]
+
+if active_page == "💬 Goofy Chatbox":
+    st.subheader("💬 Global Goofy Chatbox")
+    st.caption("Chat live with everyone currently logged into the portal!")
+
+    # Display chat history
+    chat_container = st.container(height=400)
+    with chat_container:
+        if not global_chat:
+            st.info("No messages yet. Say something goofy to start the conversation!")
+        for msg in global_chat:
+            st.markdown(f"**{msg['sender']}** `{msg['time']}`: {msg['text']}")
+
+    # Chat input form
+    with st.form(key="chat_form", clear_on_submit=True):
+        user_message = st.text_input("Type a message...", placeholder="Type here...")
+        submit_chat = st.form_submit_button("Send")
+        if submit_chat and user_message.strip():
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            global_chat.append({
+                "sender": st.session_state["nickname"],
+                "text": user_message.strip(),
+                "time": timestamp
+            })
+            st.rerun()
+
+elif active_page == "🎲 Guessing Game":
+    st.subheader("🎲 Number Guessing Game")
+    st.write("Guess a number between 1 and 50!")
+    if "secret_number" not in st.session_state:
+        st.session_state["secret_number"] = random.randint(1, 50)
+    
+    guess = st.number_input("Enter your guess:", min_value=1, max_value=50, step=1)
+    if st.button("Submit Guess"):
+        if guess == st.session_state["secret_number"]:
+            st.success("🎉 Correct! You guessed the secret number!")
+            st.session_state["secret_number"] = random.randint(1, 50)
+        elif guess < st.session_state["secret_number"]:
+            st.warning("📈 Too low! Try a higher number.")
+        else:
+            st.warning("📉 Too high! Try a lower number.")
+
+else:
+    st.subheader(f"🚧 {active_page}")
+    st.write(f"The page **{active_page}** is selected. You can add your custom layout for this section here!")
