@@ -51,8 +51,6 @@ if "banned_users" not in st.session_state:
     st.session_state["banned_users"] = []
 if "polls" not in st.session_state:
     st.session_state["polls"] = []
-if "sketch_strokes" not in st.session_state:
-    st.session_state["sketch_strokes"] = []
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -151,15 +149,15 @@ st.markdown("---")
 
 # --- SECRET TETRIS OVERLAY ---
 if st.session_state["show_secret_game"]:
-    st.info("🎮 **SECRET TETRIS UNLOCKED!** Enjoy stacking blocks right here.")
+    st.info("🎮 **SECRET TETRIS UNLOCKED!** Click inside the game box once to enable controls.")
     
     tetris_html = """<!DOCTYPE html>
 <html>
 <head>
   <style>
-    body { background-color: #0e1117; color: white; font-family: 'Courier New', Courier, monospace; text-align: center; margin: 0; padding: 10px; overflow: hidden; }
+    body { background-color: #0e1117; color: white; font-family: 'Courier New', Courier, monospace; text-align: center; margin: 0; padding: 10px; overflow: hidden; outline: none; }
     .game-container { display: flex; justify-content: center; align-items: flex-start; gap: 20px; margin-top: 10px; }
-    #tetrisCanvas { background-color: #000; border: 3px solid #ff4b4b; border-radius: 6px; box-shadow: 0 0 12px rgba(255, 75, 75, 0.4); width: 220px; height: 380px; display: block; }
+    #tetrisCanvas { background-color: #000; border: 3px solid #ff4b4b; border-radius: 6px; box-shadow: 0 0 12px rgba(255, 75, 75, 0.4); width: 220px; height: 380px; display: block; cursor: pointer; }
     .sidebar-panel { background: #161b22; border: 2px solid #30363d; border-radius: 8px; padding: 12px; width: 130px; text-align: left; box-sizing: border-box; }
     .panel-title { font-size: 11px; color: #8b949e; text-transform: uppercase; margin-bottom: 3px; }
     .panel-value { font-size: 18px; font-weight: bold; color: #00ff00; margin-bottom: 12px; }
@@ -167,7 +165,7 @@ if st.session_state["show_secret_game"]:
     .controls-info { margin-top: 12px; font-size: 12px; color: #8b949e; font-family: sans-serif; }
   </style>
 </head>
-<body>
+<body tabindex="0" id="bodyRoot">
 
   <div class="game-container">
     <canvas id="tetrisCanvas" width="240" height="400"></canvas>
@@ -184,10 +182,14 @@ if st.session_state["show_secret_game"]:
   </div>
 
   <div class="controls-info">
-    <b>Left/Right Arrow</b>: Move | <b>Up Arrow</b>: Rotate | <b>Down Arrow</b>: Drop | <b>Spacebar</b>: Hard Drop | <b>R</b>: Reset
+    👉 <b>Click game to focus!</b> | <b>Left/Right</b>: Move | <b>Up</b>: Rotate | <b>Down</b>: Drop | <b>Space</b>: Hard Drop | <b>R</b>: Reset
   </div>
 
   <script>
+    const root = document.getElementById("bodyRoot");
+    root.focus();
+    root.addEventListener("click", () => root.focus());
+
     const canvas = document.getElementById("tetrisCanvas");
     const ctx = canvas.getContext("2d");
     const nextCanvas = document.getElementById("nextCanvas");
@@ -369,7 +371,10 @@ if st.session_state["show_secret_game"]:
       update();
     }
 
-    document.addEventListener("keydown", event => {
+    window.addEventListener("keydown", event => {
+      if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(event.key)) {
+        event.preventDefault(); // Stop page scrolling
+      }
       if (gameOver && event.key.toLowerCase() === 'r') { resetGame(); return; }
       if (gameOver) return;
       if (event.key === "ArrowLeft") playerMove(-1);
@@ -491,13 +496,16 @@ elif active_page == "🪨 Rock Paper Scissors":
 
 elif active_page == "🚀 Asteroid Dodge":
     st.subheader("🚀 Asteroid Dodge Mini-Game")
-    st.write("Pilot your ship and dodge incoming space debris!")
+    st.write("Click inside the game area first to grab focus, then use left/right arrows to dodge!")
     asteroid_html = """
-    <div style="background: #000; color: #00ff00; padding: 20px; text-align: center; border: 2px solid #ff4b4b; border-radius: 8px; font-family: monospace;">
-        <h3>🚀 Asteroid Dodge Simulator</h3>
-        <p>Use left/right arrows inside the arcade zone to dodge asteroids!</p>
+    <div tabindex="0" id="dodgeRoot" style="background: #000; color: #00ff00; padding: 20px; text-align: center; border: 2px solid #ff4b4b; border-radius: 8px; font-family: monospace; outline: none; cursor: pointer;">
+        <h3>🚀 Asteroid Dodge Simulator (Click to Play)</h3>
         <canvas id="dodgeCanvas" width="400" height="200" style="background:#111; border: 1px solid #444;"></canvas>
         <script>
+            const dRoot = document.getElementById("dodgeRoot");
+            dRoot.focus();
+            dRoot.addEventListener("click", () => dRoot.focus());
+
             const canvas = document.getElementById("dodgeCanvas");
             const ctx = canvas.getContext("2d");
             let shipX = 180;
@@ -506,7 +514,8 @@ elif active_page == "🚀 Asteroid Dodge":
             let score = 0;
             let active = true;
 
-            document.addEventListener("keydown", e => {
+            window.addEventListener("keydown", e => {
+                if(["ArrowLeft","ArrowRight"].includes(e.key)) e.preventDefault();
                 if(e.key === "ArrowLeft" && shipX > 0) shipX -= 15;
                 if(e.key === "ArrowRight" && shipX < 370) shipX += 15;
             });
@@ -516,11 +525,9 @@ elif active_page == "🚀 Asteroid Dodge":
                 ctx.fillStyle = "#111";
                 ctx.fillRect(0, 0, 400, 200);
                 
-                // Draw ship
                 ctx.fillStyle = "#00ff00";
                 ctx.fillRect(shipX, 170, 30, 20);
 
-                // Draw asteroid
                 ctx.fillStyle = "#ff4b4b";
                 ctx.fillRect(asteroidX, asteroidY, 20, 20);
                 asteroidY += 4;
@@ -531,7 +538,6 @@ elif active_page == "🚀 Asteroid Dodge":
                     score += 10;
                 }
 
-                // Collision
                 if(asteroidY >= 150 && asteroidY <= 190 && asteroidX >= shipX - 15 && asteroidX <= shipX + 25) {
                     ctx.fillStyle = "#fff";
                     ctx.font = "20px monospace";
@@ -550,17 +556,20 @@ elif active_page == "🚀 Asteroid Dodge":
         </script>
     </div>
     """
-    components.html(asteroid_html, height=280)
+    components.html(asteroid_html, height=300)
 
 elif active_page == "🟡 Pac-Man":
     st.subheader("🟡 Pac-Man Arcade")
-    st.info("Enjoy a quick arcade throwback right here in the portal!")
     pacman_html = """
-    <div style="background: #000; color: yellow; padding: 20px; text-align: center; border: 2px solid yellow; border-radius: 8px; font-family: monospace;">
-        <h3>🟡 Retro Pac-Man Arena</h3>
+    <div tabindex="0" id="pacRoot" style="background: #000; color: yellow; padding: 20px; text-align: center; border: 2px solid yellow; border-radius: 8px; font-family: monospace; outline: none; cursor: pointer;">
+        <h3>🟡 Retro Pac-Man Arena (Click to Play)</h3>
         <canvas id="pacCanvas" width="300" height="150" style="background:#050515; border: 1px solid #333;"></canvas>
         <p>Chomp the dots! Use arrow keys to navigate.</p>
         <script>
+            const pRoot = document.getElementById("pacRoot");
+            pRoot.focus();
+            pRoot.addEventListener("click", () => pRoot.focus());
+
             const pCanvas = document.getElementById("pacCanvas");
             const pCtx = pCanvas.getContext("2d");
             let px = 50, py = 75, dx = 2;
@@ -580,7 +589,7 @@ elif active_page == "🟡 Pac-Man":
         </script>
     </div>
     """
-    components.html(pacman_html, height=260)
+    components.html(pacman_html, height=280)
 
 elif active_page == "💡 Feature Requests":
     st.subheader("💡 Portal Feature Requests")
