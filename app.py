@@ -51,6 +51,8 @@ if "banned_users" not in st.session_state:
     st.session_state["banned_users"] = []
 if "polls" not in st.session_state:
     st.session_state["polls"] = []
+if "sketch_strokes" not in st.session_state:
+    st.session_state["sketch_strokes"] = []
 
 # --- 2. GLOBAL CHAT STORAGE ---
 @st.cache_resource
@@ -399,7 +401,6 @@ if active_page == "💬 Goofy Chatbox":
     st.subheader("💬 Global Goofy Chatbox")
     st.caption("Chat live with everyone currently logged into the portal!")
 
-    # Display chat history
     chat_container = st.container(height=400)
     with chat_container:
         if not global_chat:
@@ -407,7 +408,6 @@ if active_page == "💬 Goofy Chatbox":
         for msg in global_chat:
             st.markdown(f"**{msg['sender']}** `{msg['time']}`: {msg['text']}")
 
-    # Chat input form
     with st.form(key="chat_form", clear_on_submit=True):
         user_message = st.text_input("Type a message...", placeholder="Type here...")
         submit_chat = st.form_submit_button("Send")
@@ -436,6 +436,259 @@ elif active_page == "🎲 Guessing Game":
         else:
             st.warning("📉 Too high! Try a lower number.")
 
-else:
-    st.subheader(f"🚧 {active_page}")
-    st.write(f"The page **{active_page}** is selected. You can add your custom layout for this section here!")
+elif active_page == "❌ Tic-Tac-Toe":
+    st.subheader("❌ Tic-Tac-Toe")
+    if "ttt_board" not in st.session_state:
+        st.session_state["ttt_board"] = [""] * 9
+        st.session_state["ttt_turn"] = "❌"
+
+    def check_winner(b):
+        wins = [(0,1,2),(3,4,5),(6,7,8),(0,3,6),(1,4,7),(2,5,8),(0,4,8),(2,4,6)]
+        for x,y,z in wins:
+            if b[x] and b[x] == b[y] == b[z]:
+                return b[x]
+        if "" not in b:
+            return "Tie"
+        return None
+
+    winner = check_winner(st.session_state["ttt_board"])
+    if winner:
+        if winner == "Tie":
+            st.info("It's a tie!")
+        else:
+            st.success(f"Player {winner} wins!")
+        if st.button("Reset Game"):
+            st.session_state["ttt_board"] = [""] * 9
+            st.session_state["ttt_turn"] = "❌"
+            st.rerun()
+    else:
+        st.write(f"Current Turn: **{st.session_state['ttt_turn']}**")
+        for row in range(3):
+            cols = st.columns(3)
+            for col in range(3):
+                idx = row * 3 + col
+                with cols[col]:
+                    if st.button(st.session_state["ttt_board"][idx] or " ", key=f"ttt_{idx}", use_container_width=True):
+                        if not st.session_state["ttt_board"][idx]:
+                            st.session_state["ttt_board"][idx] = st.session_state["ttt_turn"]
+                            st.session_state["ttt_turn"] = "⭕" if st.session_state["ttt_turn"] == "❌" else "❌"
+                            st.rerun()
+
+elif active_page == "🪨 Rock Paper Scissors":
+    st.subheader("🪨 Rock Paper Scissors")
+    choice = st.radio("Make your move:", ["Rock", "Paper", "Scissors"], horizontal=True)
+    if st.button("Shoot!"):
+        comp_choice = random.choice(["Rock", "Paper", "Scissors"])
+        st.write(f"Computer chose: **{comp_choice}**")
+        if choice == comp_choice:
+            st.info("It's a tie!")
+        elif (choice == "Rock" and comp_choice == "Scissors") or \
+             (choice == "Paper" and comp_choice == "Rock") or \
+             (choice == "Scissors" and comp_choice == "Paper"):
+            st.success("🎉 You win!")
+        else:
+            st.error("💀 You lose!")
+
+elif active_page == "🚀 Asteroid Dodge":
+    st.subheader("🚀 Asteroid Dodge Mini-Game")
+    st.write("Pilot your ship and dodge incoming space debris!")
+    asteroid_html = """
+    <div style="background: #000; color: #00ff00; padding: 20px; text-align: center; border: 2px solid #ff4b4b; border-radius: 8px; font-family: monospace;">
+        <h3>🚀 Asteroid Dodge Simulator</h3>
+        <p>Use left/right arrows inside the arcade zone to dodge asteroids!</p>
+        <canvas id="dodgeCanvas" width="400" height="200" style="background:#111; border: 1px solid #444;"></canvas>
+        <script>
+            const canvas = document.getElementById("dodgeCanvas");
+            const ctx = canvas.getContext("2d");
+            let shipX = 180;
+            let asteroidX = Math.random() * 360;
+            let asteroidY = 0;
+            let score = 0;
+            let active = true;
+
+            document.addEventListener("keydown", e => {
+                if(e.key === "ArrowLeft" && shipX > 0) shipX -= 15;
+                if(e.key === "ArrowRight" && shipX < 370) shipX += 15;
+            });
+
+            function loop() {
+                if(!active) return;
+                ctx.fillStyle = "#111";
+                ctx.fillRect(0, 0, 400, 200);
+                
+                // Draw ship
+                ctx.fillStyle = "#00ff00";
+                ctx.fillRect(shipX, 170, 30, 20);
+
+                // Draw asteroid
+                ctx.fillStyle = "#ff4b4b";
+                ctx.fillRect(asteroidX, asteroidY, 20, 20);
+                asteroidY += 4;
+
+                if(asteroidY > 200) {
+                    asteroidY = 0;
+                    asteroidX = Math.random() * 370;
+                    score += 10;
+                }
+
+                // Collision
+                if(asteroidY >= 150 && asteroidY <= 190 && asteroidX >= shipX - 15 && asteroidX <= shipX + 25) {
+                    ctx.fillStyle = "#fff";
+                    ctx.font = "20px monospace";
+                    ctx.fillText("CRASH! Score: " + score, 80, 100);
+                    active = false;
+                    return;
+                }
+
+                ctx.fillStyle = "#fff";
+                ctx.font = "12px monospace";
+                ctx.fillText("Score: " + score, 10, 20);
+
+                requestAnimationFrame(loop);
+            }
+            loop();
+        </script>
+    </div>
+    """
+    components.html(asteroid_html, height=280)
+
+elif active_page == "🟡 Pac-Man":
+    st.subheader("🟡 Pac-Man Arcade")
+    st.info("Enjoy a quick arcade throwback right here in the portal!")
+    pacman_html = """
+    <div style="background: #000; color: yellow; padding: 20px; text-align: center; border: 2px solid yellow; border-radius: 8px; font-family: monospace;">
+        <h3>🟡 Retro Pac-Man Arena</h3>
+        <canvas id="pacCanvas" width="300" height="150" style="background:#050515; border: 1px solid #333;"></canvas>
+        <p>Chomp the dots! Use arrow keys to navigate.</p>
+        <script>
+            const pCanvas = document.getElementById("pacCanvas");
+            const pCtx = pCanvas.getContext("2d");
+            let px = 50, py = 75, dx = 2;
+            function pLoop() {
+                pCtx.fillStyle = "#050515";
+                pCtx.fillRect(0,0,300,150);
+                pCtx.fillStyle = "yellow";
+                pCtx.beginPath();
+                pCtx.arc(px, py, 15, 0.2 * Math.PI, 1.8 * Math.PI);
+                pCtx.lineTo(px, py);
+                pCtx.fill();
+                px += dx;
+                if(px > 280 || px < 20) dx = -dx;
+                requestAnimationFrame(pLoop);
+            }
+            pLoop();
+        </script>
+    </div>
+    """
+    components.html(pacman_html, height=260)
+
+elif active_page == "💡 Feature Requests":
+    st.subheader("💡 Portal Feature Requests")
+    with st.form("feature_form", clear_on_submit=True):
+        req = st.text_input("What feature should we add next?")
+        if st.form_submit_button("Submit Request"):
+            if req.strip():
+                st.session_state["feature_requests"].append({"user": st.session_state["nickname"], "text": req.strip()})
+                st.success("Feature request submitted successfully!")
+                st.rerun()
+
+    st.write("### Submitted Ideas:")
+    if not st.session_state["feature_requests"]:
+        st.info("No feature requests yet. Be the first to suggest one!")
+    else:
+        for fr in st.session_state["feature_requests"]:
+            st.markdown(f"- **{fr['user']}**: {fr['text']}")
+
+elif active_page == "🎨 Goofy Sketchpad":
+    st.subheader("🎨 Goofy Sketchpad")
+    st.write("Draw something goofy and leave your mark on the portal!")
+    
+    sketch_html = """
+    <div style="text-align: center;">
+        <canvas id="drawCanvas" width="400" height="250" style="background: white; border: 2px solid #ccc; cursor: crosshair;"></canvas>
+        <br>
+        <button onclick="clearCanvas()" style="margin-top: 10px; padding: 6px 12px; background: #ff4b4b; color: white; border: none; border-radius: 4px; cursor: pointer;">Clear Canvas</button>
+        <script>
+            const dCanvas = document.getElementById("drawCanvas");
+            const dCtx = dCanvas.getContext("2d");
+            let painting = false;
+            dCtx.lineWidth = 3;
+            dCtx.lineCap = "round";
+            dCtx.strokeStyle = "#ff4b4b";
+
+            dCanvas.addEventListener("mousedown", e => { painting = true; draw(e); });
+            dCanvas.addEventListener("mouseup", () => { painting = false; dCtx.beginPath(); });
+            dCanvas.addEventListener("mousemove", draw);
+
+            function draw(e) {
+                if(!painting) return;
+                const rect = dCanvas.getBoundingClientRect();
+                dCtx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                dCtx.stroke();
+                dCtx.beginPath();
+                dCtx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            }
+
+            function clearCanvas() {
+                dCtx.clearRect(0, 0, dCanvas.width, dCanvas.height);
+            }
+        </script>
+    </div>
+    """
+    components.html(sketch_html, height=330)
+
+elif active_page == "📊 Gang Polls":
+    st.subheader("📊 Gang Polls")
+    with st.form("poll_form", clear_on_submit=True):
+        p_q = st.text_input("Poll Question:")
+        opt1 = st.text_input("Option A:")
+        opt2 = st.text_input("Option B:")
+        if st.form_submit_button("Create Poll"):
+            if p_q and opt1 and opt2:
+                st.session_state["polls"].append({
+                    "question": p_q,
+                    "options": {opt1: 0, opt2: 0},
+                    "voted": []
+                })
+                st.success("Poll created!")
+                st.rerun()
+
+    st.write("### Active Polls:")
+    if not st.session_state["polls"]:
+        st.info("No active polls right now. Create one above!")
+    else:
+        for idx, poll in enumerate(st.session_state["polls"]):
+            st.markdown(f"**Q: {poll['question']}**")
+            if st.session_state["nickname"] in poll["voted"]:
+                st.info("You already voted in this poll!")
+                for opt, count in poll["options"].items():
+                    st.write(f"- {opt}: **{count} votes**")
+            else:
+                chosen = st.radio("Choose option:", list(poll["options"].keys()), key=f"poll_choice_{idx}")
+                if st.button("Cast Vote", key=f"vote_btn_{idx}"):
+                    poll["options"][chosen] += 1
+                    poll["voted"].append(st.session_state["nickname"])
+                    st.success("Vote recorded!")
+                    st.rerun()
+            st.divider()
+
+elif active_page == "👑 Admin Controls":
+    st.subheader("👑 Admin Controls (Calvin Only)")
+    st.write("Manage portal access and user status.")
+    
+    target_user = st.selectbox("Select Member:", [u for u in ALLOWED_USERS if u != "calvin"])
+    if target_user in st.session_state["banned_users"]:
+        st.warning(f"Status for **{target_user}**: Banned 🚫")
+        if st.button(f"Unban {target_user}"):
+            st.session_state["banned_users"].remove(target_user)
+            st.success(f"Unbanned {target_user} successfully!")
+            st.rerun()
+    else:
+        st.success(f"Status for **{target_user}**: Active ✅")
+        if st.button(f"Ban {target_user}"):
+            st.session_state["banned_users"].append(target_user)
+            st.error(f"Banned {target_user} from the portal!")
+            st.rerun()
+
+    st.write("### Current Banned List:")
+    st.write(st.session_state["banned_users"] if st.session_state["banned_users"] else "None")
