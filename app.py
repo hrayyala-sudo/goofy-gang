@@ -625,10 +625,10 @@ elif active_page == "🟡 Pac-Man":
     let pacman = { x: 13 * tileSize, y: 16 * tileSize, speed: 2, dir: 0, nextDir: 0 };
     
     let ghosts = [
-      { x: 13 * tileSize, y: 8 * tileSize, speed: 1.5, color: '#ff0000', dx: 0, dy: -1.5 },
-      { x: 12 * tileSize, y: 10 * tileSize, speed: 1.5, color: '#ffb8ff', dx: 1.5, dy: 0 },
-      { x: 14 * tileSize, y: 10 * tileSize, speed: 1.5, color: '#00ffff', dx: -1.5, dy: 0 },
-      { x: 13 * tileSize, y: 10 * tileSize, speed: 1.5, color: '#ffb852', dx: 0, dy: 1.5 }
+      { x: 13 * tileSize, y: 8 * tileSize, speed: 1, color: '#ff0000', dx: 0, dy: -1 },
+      { x: 12 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb8ff', dx: 1, dy: 0 },
+      { x: 14 * tileSize, y: 10 * tileSize, speed: 1, color: '#00ffff', dx: -1, dy: 0 },
+      { x: 13 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb852', dx: 0, dy: 1 }
     ];
 
     window.addEventListener("keydown", e => {
@@ -649,7 +649,7 @@ elif active_page == "🟡 Pac-Man":
     }
 
     function checkWall(x, y) {
-      const buffer = 3;
+      const buffer = 2;
       let points = [
         {x: x + buffer, y: y + buffer},
         {x: x + tileSize - buffer, y: y + buffer},
@@ -668,7 +668,7 @@ elif active_page == "🟡 Pac-Man":
     function update() {
       if (gameOver) return;
 
-      // 1. Try to take queued turn if aligned on grid
+      // Check if perfectly aligned on grid to allow immediate turns
       if (pacman.nextDir !== 0 && pacman.x % tileSize === 0 && pacman.y % tileSize === 0) {
         let nextV = getVelocity(pacman.nextDir);
         if (!checkWall(pacman.x + nextV.dx, pacman.y + nextV.dy)) {
@@ -676,11 +676,11 @@ elif active_page == "🟡 Pac-Man":
         }
       }
 
-      // 2. Move in current direction if path is open
       let v = getVelocity(pacman.dir);
       let nx = pacman.x + v.dx;
       let ny = pacman.y + v.dy;
 
+      // Screen wrap tunnel
       if (nx < -tileSize/2) nx = map[0].length * tileSize - tileSize/2;
       if (nx > map[0].length * tileSize - tileSize/2) nx = -tileSize/2;
 
@@ -688,7 +688,10 @@ elif active_page == "🟡 Pac-Man":
         pacman.x = nx;
         pacman.y = ny;
       } else {
-        // DO NOT set pacman.dir = 0 here, so he keeps moving or pauses smoothly without locking up forever
+        // Snap back cleanly to grid alignment to avoid getting wedged
+        pacman.x = Math.round(pacman.x / tileSize) * tileSize;
+        pacman.y = Math.round(pacman.y / tileSize) * tileSize;
+        pacman.dir = 0;
       }
 
       // Eat dots
