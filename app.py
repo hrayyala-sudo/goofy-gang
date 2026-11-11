@@ -624,11 +624,12 @@ elif active_page == "🟡 Pac-Man":
 
     let pacman = { x: 13 * tileSize, y: 16 * tileSize, speed: 2, dir: 0, nextDir: 0 };
     
+    // 4 Ghosts properly staggered inside the Ghost House pen
     let ghosts = [
-      { x: 13 * tileSize, y: 8 * tileSize, speed: 1, color: '#ff0000', dx: 0, dy: -1 },
-      { x: 12 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb8ff', dx: 1, dy: 0 },
-      { x: 14 * tileSize, y: 10 * tileSize, speed: 1, color: '#00ffff', dx: -1, dy: 0 },
-      { x: 13 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb852', dx: 0, dy: 1 }
+      { x: 13 * tileSize, y: 8 * tileSize, speed: 1, color: '#ff0000', dx: 0, dy: -1 }, // Blinky (Red - Top Center)
+      { x: 11 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb8ff', dx: 1, dy: 0 }, // Pinky (Pink - Left)
+      { x: 15 * tileSize, y: 10 * tileSize, speed: 1, color: '#00ffff', dx: -1, dy: 0 }, // Inky (Cyan - Right)
+      { x: 13 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb852', dx: 0, dy: 1 }  // Clyde (Orange - Bottom Center)
     ];
 
     window.addEventListener("keydown", e => {
@@ -668,7 +669,6 @@ elif active_page == "🟡 Pac-Man":
     function update() {
       if (gameOver) return;
 
-      // Check if perfectly aligned on grid to allow immediate turns
       if (pacman.nextDir !== 0 && pacman.x % tileSize === 0 && pacman.y % tileSize === 0) {
         let nextV = getVelocity(pacman.nextDir);
         if (!checkWall(pacman.x + nextV.dx, pacman.y + nextV.dy)) {
@@ -680,7 +680,6 @@ elif active_page == "🟡 Pac-Man":
       let nx = pacman.x + v.dx;
       let ny = pacman.y + v.dy;
 
-      // Screen wrap tunnel
       if (nx < -tileSize/2) nx = map[0].length * tileSize - tileSize/2;
       if (nx > map[0].length * tileSize - tileSize/2) nx = -tileSize/2;
 
@@ -688,13 +687,11 @@ elif active_page == "🟡 Pac-Man":
         pacman.x = nx;
         pacman.y = ny;
       } else {
-        // Snap back cleanly to grid alignment to avoid getting wedged
         pacman.x = Math.round(pacman.x / tileSize) * tileSize;
         pacman.y = Math.round(pacman.y / tileSize) * tileSize;
         pacman.dir = 0;
       }
 
-      // Eat dots
       let row = Math.floor((pacman.y + tileSize/2) / tileSize);
       let col = Math.floor((pacman.x + tileSize/2) / tileSize);
       if (map[row] && map[row][col] === 0) {
@@ -703,7 +700,6 @@ elif active_page == "🟡 Pac-Man":
         document.getElementById("pScore").innerText = score;
       }
 
-      // Ghosts movement & collision
       ghosts.forEach(g => {
         g.x += g.dx;
         g.y += g.dy;
@@ -792,6 +788,12 @@ elif active_page == "🟡 Pac-Man":
       pacman.y = 16 * tileSize;
       pacman.dir = 0;
       pacman.nextDir = 0;
+      
+      // Reset ghosts to staggered start positions
+      ghosts[0].x = 13 * tileSize; ghosts[0].y = 8 * tileSize;
+      ghosts[1].x = 11 * tileSize; ghosts[1].y = 10 * tileSize;
+      ghosts[2].x = 15 * tileSize; ghosts[2].y = 10 * tileSize;
+      ghosts[3].x = 13 * tileSize; ghosts[3].y = 10 * tileSize;
     }
 
     function loop() {
