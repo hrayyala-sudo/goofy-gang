@@ -562,8 +562,8 @@ elif active_page == "🚀 Asteroid Dodge":
     components.html(asteroid_html, height=300)
 
 elif active_page == "🟡 Pac-Man":
-    st.subheader("🟡 Arcade Pac-Man (4 Ghosts)")
-    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to chomp dots and avoid all 4 ghosts!")
+    st.subheader("🟡 Arcade Pac-Man (Roaming Ghosts)")
+    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to chomp dots while the 4 ghosts roam and fly freely around the entire map!")
     
     pacman_html = """<!DOCTYPE html>
 <html>
@@ -624,12 +624,12 @@ elif active_page == "🟡 Pac-Man":
 
     let pacman = { x: 13 * tileSize, y: 16 * tileSize, speed: 2, dir: 0, nextDir: 0 };
     
-    // 4 Ghosts properly staggered inside the Ghost House pen
+    // 4 Ghosts roaming the map (Directions: 1=Up, 2=Down, 3=Left, 4=Right)
     let ghosts = [
-      { x: 13 * tileSize, y: 8 * tileSize, speed: 1, color: '#ff0000', dx: 0, dy: -1 }, // Blinky (Red - Top Center)
-      { x: 11 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb8ff', dx: 1, dy: 0 }, // Pinky (Pink - Left)
-      { x: 15 * tileSize, y: 10 * tileSize, speed: 1, color: '#00ffff', dx: -1, dy: 0 }, // Inky (Cyan - Right)
-      { x: 13 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb852', dx: 0, dy: 1 }  // Clyde (Orange - Bottom Center)
+      { x: 13 * tileSize, y: 8 * tileSize, speed: 1, color: '#ff0000', dir: 1 },
+      { x: 11 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb8ff', dir: 3 },
+      { x: 15 * tileSize, y: 10 * tileSize, speed: 1, color: '#00ffff', dir: 4 },
+      { x: 13 * tileSize, y: 10 * tileSize, speed: 1, color: '#ffb852', dir: 2 }
     ];
 
     window.addEventListener("keydown", e => {
@@ -641,11 +641,11 @@ elif active_page == "🟡 Pac-Man":
       if(e.key === "ArrowRight") pacman.nextDir = 4;
     });
 
-    function getVelocity(dir) {
-      if (dir === 1) return {dx: 0, dy: -pacman.speed};
-      if (dir === 2) return {dx: 0, dy: pacman.speed};
-      if (dir === 3) return {dx: -pacman.speed, dy: 0};
-      if (dir === 4) return {dx: pacman.speed, dy: 0};
+    function getVelocity(dir, speed) {
+      if (dir === 1) return {dx: 0, dy: -speed};
+      if (dir === 2) return {dx: 0, dy: speed};
+      if (dir === 3) return {dx: -speed, dy: 0};
+      if (dir === 4) return {dx: speed, dy: 0};
       return {dx: 0, dy: 0};
     }
 
@@ -669,14 +669,15 @@ elif active_page == "🟡 Pac-Man":
     function update() {
       if (gameOver) return;
 
+      // Pac-Man movement update
       if (pacman.nextDir !== 0 && pacman.x % tileSize === 0 && pacman.y % tileSize === 0) {
-        let nextV = getVelocity(pacman.nextDir);
+        let nextV = getVelocity(pacman.nextDir, pacman.speed);
         if (!checkWall(pacman.x + nextV.dx, pacman.y + nextV.dy)) {
           pacman.dir = pacman.nextDir;
         }
       }
 
-      let v = getVelocity(pacman.dir);
+      let v = getVelocity(pacman.dir, pacman.speed);
       let nx = pacman.x + v.dx;
       let ny = pacman.y + v.dy;
 
@@ -692,6 +693,7 @@ elif active_page == "🟡 Pac-Man":
         pacman.dir = 0;
       }
 
+      // Eat dots
       let row = Math.floor((pacman.y + tileSize/2) / tileSize);
       let col = Math.floor((pacman.x + tileSize/2) / tileSize);
       if (map[row] && map[row][col] === 0) {
@@ -700,16 +702,52 @@ elif active_page == "🟡 Pac-Man":
         document.getElementById("pScore").innerText = score;
       }
 
+      // Ghost roaming AI (chooses random valid turns at grid intersections)
       ghosts.forEach(g => {
-        g.x += g.dx;
-        g.y += g.dy;
-        if (checkWall(g.x, g.y)) {
-          g.dx = -g.dx;
-          g.dy = -g.dy;
-          g.x += g.dx * 2;
-          g.y += g.dy * 2;
+        if (g.x % tileSize === 0 && g.y % tileSize === 0) {
+          let validDirs = [];
+          const dirs = [1, 2, 3, 4]; // Up, Down, Left, Right
+          const opposites = {1: 2, 2: 1, 3: 4, 4: 3};
+
+          dirs.forEach(d => {
+            // Avoid immediate U-turns unless it's the only option
+            if (d !== opposites[g.dir]) {
+              let testV = getVelocity(d, g.speed);
+              if (!checkWall(g.x + testV.dx, g.y + testV.dy)) {
+                validDirs.push(d);
+              }
+            }
+          });
+
+          // If no non-U-turn path exists, allow turning back
+          if (validDirs.length === 0) {
+            let oppV = getVelocity(opposites[g.dir], g.speed);
+            if (!checkWall(g.x + oppV.dx, g.y + oppV.dy)) {
+              validDirs.push(opposites[g.dir]);
+            }
+          }
+
+          if (validDirs.length > 0) {
+            g.dir = validDirs[Math.floor(Math.random() * validDirs.length)];
+          }
         }
 
+        let gv = getVelocity(g.dir, g.speed);
+        let gnx = g.x + gv.dx;
+        let gny = g.y + gv.dy;
+
+        if (gnx < -tileSize/2) gnx = map[0].length * tileSize - tileSize/2;
+        if (gnx > map[0].length * tileSize - tileSize/2) gnx = -tileSize/2;
+
+        if (!checkWall(gnx, gny)) {
+          g.x = gnx;
+          g.y = gny;
+        } else {
+          // Fallback turn if hitting a wall unexpectedly
+          g.dir = Math.floor(Math.random() * 4) + 1;
+        }
+
+        // Check collision with Pac-Man
         let dist = Math.hypot((pacman.x + tileSize/2) - (g.x + tileSize/2), (pacman.y + tileSize/2) - (g.y + tileSize/2));
         if (dist < tileSize * 0.75) {
           lives--;
@@ -789,11 +827,10 @@ elif active_page == "🟡 Pac-Man":
       pacman.dir = 0;
       pacman.nextDir = 0;
       
-      // Reset ghosts to staggered start positions
-      ghosts[0].x = 13 * tileSize; ghosts[0].y = 8 * tileSize;
-      ghosts[1].x = 11 * tileSize; ghosts[1].y = 10 * tileSize;
-      ghosts[2].x = 15 * tileSize; ghosts[2].y = 10 * tileSize;
-      ghosts[3].x = 13 * tileSize; ghosts[3].y = 10 * tileSize;
+      ghosts[0].x = 13 * tileSize; ghosts[0].y = 8 * tileSize; ghosts[0].dir = 1;
+      ghosts[1].x = 11 * tileSize; ghosts[1].y = 10 * tileSize; ghosts[1].dir = 3;
+      ghosts[2].x = 15 * tileSize; ghosts[2].y = 10 * tileSize; ghosts[2].dir = 4;
+      ghosts[3].x = 13 * tileSize; ghosts[3].y = 10 * tileSize; ghosts[3].dir = 2;
     }
 
     function loop() {
