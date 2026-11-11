@@ -562,8 +562,8 @@ elif active_page == "🚀 Asteroid Dodge":
     components.html(asteroid_html, height=300)
 
 elif active_page == "🟡 Pac-Man":
-    st.subheader("🟡 Classic Pac-Man Arcade")
-    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to guide Pac-Man. He is properly constrained by the maze walls!")
+    st.subheader("🟡 Arcade Pac-Man (4 Ghosts)")
+    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to chomp dots and avoid all 4 ghosts (**Blinky**, **Pinky**, **Inky**, and **Clyde**)!")
     
     pacman_html = """<!DOCTYPE html>
 <html>
@@ -578,9 +578,9 @@ elif active_page == "🟡 Pac-Man":
 </head>
 <body tabindex="0" id="pacBody">
   <div id="pacContainer">
-    <div class="score-board">SCORE: <span id="pScore">0</span></div>
-    <canvas id="pacCanvas" width="384" height="384"></canvas>
-    <div class="instructions">👉 <b>Click here to focus!</b> | <b>Arrow Keys</b>: Move Pac-Man</div>
+    <div class="score-board">SCORE: <span id="pScore">0</span> | LIVES: <span id="pLives">3</span></div>
+    <canvas id="pacCanvas" width="448" height="496"></canvas>
+    <div class="instructions">👉 <b>Click to focus!</b> | <b>Arrow Keys</b>: Move | <b>R</b>: Restart</div>
   </div>
 
   <script>
@@ -591,34 +591,55 @@ elif active_page == "🟡 Pac-Man":
     const canvas = document.getElementById("pacCanvas");
     const ctx = canvas.getContext("2d");
 
-    const tileSize = 24;
+    const tileSize = 16;
     let score = 0;
+    let lives = 3;
+    let gameOver = false;
 
-    const map = [
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],
-      [1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,1],
-      [1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1],
-      [1,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1],
-      [1,1,1,0,1,0,0,0,0,0,0,1,0,1,1,1],
-      [2,2,1,0,1,1,1,2,2,1,1,1,0,1,2,2],
-      [1,1,1,0,0,0,0,2,2,0,0,0,0,1,1,1],
-      [1,0,0,0,1,1,0,2,2,0,1,1,0,0,0,1],
-      [1,0,1,1,1,0,0,2,2,0,0,1,1,1,0,1],
-      [1,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    // Authentic Classic Arcade Layout Mockup (1 = Wall, 0 = Dot, 2 = Path/House)
+    const originalMap = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+      [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,0,1,1,1,1,1,2,1,1,2,1,1,1,1,1,0,1,1,1,1,1,1],
+      [2,2,2,2,2,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,2,2,2,2,2],
+      [1,1,1,1,1,1,0,1,1,2,1,1,1,2,2,1,1,1,2,1,1,0,1,1,1,1,1,1],
+      [2,2,2,2,2,2,0,2,2,2,1,2,2,2,2,2,2,1,2,2,2,0,2,2,2,2,2,2],
+      [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+      [2,2,2,2,2,1,0,1,1,2,2,2,2,2,2,2,2,2,2,1,1,0,1,2,2,2,2,2],
+      [1,1,1,1,1,1,0,1,1,2,1,1,1,1,1,1,1,1,2,1,1,0,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,1,1,0,1,1,1,1,0,1],
+      [1,0,0,0,1,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,1,0,0,0,1],
+      [1,1,1,0,1,1,0,1,1,0,1,1,1,1,1,1,1,1,0,1,1,0,1,1,0,1,1,1],
+      [1,0,0,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0,0,0,1],
+      [1,0,1,1,1,1,1,1,1,1,1,1,0,1,1,0,1,1,1,1,1,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+    let map = JSON.parse(JSON.stringify(originalMap));
+
+    let pacman = { x: 13 * tileSize, y: 16 * tileSize, speed: 2, dir: 0, nextDir: 0 };
+    
+    // 4 Ghosts: Blinky (Red), Pinky (Pink), Inky (Cyan), Clyde (Orange)
+    let ghosts = [
+      { x: 13 * tileSize, y: 8 * tileSize, speed: 1.5, color: '#ff0000', dx: 0, dy: -1.5 },
+      { x: 12 * tileSize, y: 10 * tileSize, speed: 1.5, color: '#ffb8ff', dx: 1.5, dy: 0 },
+      { x: 14 * tileSize, y: 10 * tileSize, speed: 1.5, color: '#00ffff', dx: -1.5, dy: 0 },
+      { x: 13 * tileSize, y: 10 * tileSize, speed: 1.5, color: '#ffb852', dx: 0, dy: 1.5 }
     ];
 
-    let pacman = { x: 7 * tileSize, y: 4 * tileSize, speed: 2, dir: 0, nextDir: 0 };
-
     window.addEventListener("keydown", e => {
-      if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) {
-        e.preventDefault();
-      }
-      if (e.key === "ArrowUp") pacman.nextDir = 1;
-      if (e.key === "ArrowDown") pacman.nextDir = 2;
-      if (e.key === "ArrowLeft") pacman.nextDir = 3;
-      if (e.key === "ArrowRight") pacman.nextDir = 4;
+      if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) e.preventDefault();
+      if(gameOver && e.key.toLowerCase() === 'r') { resetGame(); return; }
+      if(e.key === "ArrowUp") pacman.nextDir = 1;
+      if(e.key === "ArrowDown") pacman.nextDir = 2;
+      if(e.key === "ArrowLeft") pacman.nextDir = 3;
+      if(e.key === "ArrowRight") pacman.nextDir = 4;
     });
 
     function getVelocity(dir) {
@@ -629,15 +650,14 @@ elif active_page == "🟡 Pac-Man":
       return {dx: 0, dy: 0};
     }
 
-    function checkCollision(x, y) {
-      const buffer = 4;
+    function checkWall(x, y) {
+      const buffer = 3;
       let points = [
         {x: x + buffer, y: y + buffer},
         {x: x + tileSize - buffer, y: y + buffer},
         {x: x + buffer, y: y + tileSize - buffer},
         {x: x + tileSize - buffer, y: y + tileSize - buffer}
       ];
-
       for (let p of points) {
         let r = Math.floor(p.y / tileSize);
         let c = Math.floor(p.x / tileSize);
@@ -648,24 +668,32 @@ elif active_page == "🟡 Pac-Man":
     }
 
     function update() {
+      if (gameOver) return;
+
+      // Pac-Man movement
       if (pacman.nextDir !== 0 && pacman.x % tileSize === 0 && pacman.y % tileSize === 0) {
         let nextV = getVelocity(pacman.nextDir);
-        if (!checkCollision(pacman.x + nextV.dx, pacman.y + nextV.dy)) {
+        if (!checkWall(pacman.x + nextV.dx, pacman.y + nextV.dy)) {
           pacman.dir = pacman.nextDir;
         }
       }
 
       let v = getVelocity(pacman.dir);
-      let nextX = pacman.x + v.dx;
-      let nextY = pacman.y + v.dy;
+      let nx = pacman.x + v.dx;
+      let ny = pacman.y + v.dy;
 
-      if (!checkCollision(nextX, nextY)) {
-        pacman.x = nextX;
-        pacman.y = nextY;
+      // Screen wrap tunnel
+      if (nx < -tileSize/2) nx = map[0].length * tileSize - tileSize/2;
+      if (nx > map[0].length * tileSize - tileSize/2) nx = -tileSize/2;
+
+      if (!checkWall(nx, ny)) {
+        pacman.x = nx;
+        pacman.y = ny;
       } else {
         pacman.dir = 0;
       }
 
+      // Eat dots
       let row = Math.floor((pacman.y + tileSize/2) / tileSize);
       let col = Math.floor((pacman.x + tileSize/2) / tileSize);
       if (map[row] && map[row][col] === 0) {
@@ -673,12 +701,40 @@ elif active_page == "🟡 Pac-Man":
         score += 10;
         document.getElementById("pScore").innerText = score;
       }
+
+      // Ghost movement & collision
+      ghosts.forEach(g => {
+        g.x += g.dx;
+        g.y += g.dy;
+        if (checkWall(g.x, g.y)) {
+          g.dx = -g.dx;
+          g.dy = -g.dy;
+          g.x += g.dx * 2;
+          g.y += g.dy * 2;
+        }
+
+        // Check collision with Pac-Man
+        let dist = Math.hypot((pacman.x + tileSize/2) - (g.x + tileSize/2), (pacman.y + tileSize/2) - (g.y + tileSize/2));
+        if (dist < tileSize * 0.75) {
+          lives--;
+          document.getElementById("pLives").innerText = lives;
+          if (lives <= 0) {
+            gameOver = true;
+          } else {
+            pacman.x = 13 * tileSize;
+            pacman.y = 16 * tileSize;
+            pacman.dir = 0;
+            pacman.nextDir = 0;
+          }
+        }
+      });
     }
 
     function draw() {
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      // Draw map
       for (let r = 0; r < map.length; r++) {
         for (let c = 0; c < map[r].length; c++) {
           if (map[r][c] === 1) {
@@ -687,12 +743,13 @@ elif active_page == "🟡 Pac-Man":
           } else if (map[r][c] === 0) {
             ctx.fillStyle = "#ffb8ae";
             ctx.beginPath();
-            ctx.arc(c * tileSize + tileSize/2, r * tileSize + tileSize/2, 4, 0, Math.PI * 2);
+            ctx.arc(c * tileSize + tileSize/2, r * tileSize + tileSize/2, 3, 0, Math.PI * 2);
             ctx.fill();
           }
         }
       }
 
+      // Draw Pac-Man
       ctx.fillStyle = "yellow";
       ctx.beginPath();
       let angle = 0.2;
@@ -700,9 +757,44 @@ elif active_page == "🟡 Pac-Man":
       if (pacman.dir === 2) angle = 0.7;
       if (pacman.dir === 3) angle = 1.2;
       if (pacman.dir === 4) angle = 0.2;
-      ctx.arc(pacman.x + tileSize/2, pacman.y + tileSize/2, tileSize/2 - 2, angle * Math.PI, (angle + 1.6) * Math.PI);
+      ctx.arc(pacman.x + tileSize/2, pacman.y + tileSize/2, tileSize/2 - 1, angle * Math.PI, (angle + 1.6) * Math.PI);
       ctx.lineTo(pacman.x + tileSize/2, pacman.y + tileSize/2);
       ctx.fill();
+
+      // Draw Ghosts
+      ghosts.forEach(g => {
+        ctx.fillStyle = g.color;
+        ctx.beginPath();
+        ctx.arc(g.x + tileSize/2, g.y + tileSize/2 - 1, tileSize/2 - 1, Math.PI, 0, false);
+        ctx.lineTo(g.x + tileSize - 2, g.y + tileSize);
+        ctx.lineTo(g.x + 2, g.y + tileSize);
+        ctx.fill();
+      });
+
+      if (gameOver) {
+        ctx.fillStyle = "rgba(0,0,0,0.8)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#ff4b4b";
+        ctx.font = "24px 'Courier New'";
+        ctx.textAlign = "center";
+        ctx.fillText("GAME OVER", canvas.width/2, canvas.height/2 - 10);
+        ctx.font = "14px sans-serif";
+        ctx.fillStyle = "#fff";
+        ctx.fillText("Press R to Restart", canvas.width/2, canvas.height/2 + 20);
+      }
+    }
+
+    function resetGame() {
+      map = JSON.parse(JSON.stringify(originalMap));
+      score = 0;
+      lives = 3;
+      gameOver = false;
+      document.getElementById("pScore").innerText = score;
+      document.getElementById("pLives").innerText = lives;
+      pacman.x = 13 * tileSize;
+      pacman.y = 16 * tileSize;
+      pacman.dir = 0;
+      pacman.nextDir = 0;
     }
 
     function loop() {
@@ -716,7 +808,7 @@ elif active_page == "🟡 Pac-Man":
 </body>
 </html>
 """
-    components.html(pacman_html, height=520)
+    components.html(pacman_html, height=550)
 
 elif active_page == "💡 Feature Requests":
     st.subheader("💡 Portal Feature Requests")
@@ -843,7 +935,6 @@ elif active_page == "👑 Admin Controls":
     st.subheader("👑 Admin Controls (Calvin & Cal Only)")
     st.write("Manage portal access and user status.")
     
-    # Exclude both calvin and cal from the target management list
     target_user = st.selectbox("Select Member:", [u for u in ALLOWED_USERS if u not in ["calvin", "cal"]])
     if target_user in st.session_state["banned_users"]:
         st.warning(f"Status for **{target_user}**: Banned 🚫")
