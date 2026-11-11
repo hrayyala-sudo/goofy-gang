@@ -563,7 +563,7 @@ elif active_page == "🚀 Asteroid Dodge":
 
 elif active_page == "🟡 Pac-Man":
     st.subheader("🟡 Classic Pac-Man Arcade")
-    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to guide Pac-Man through the maze, eat dots, and avoid the ghost!")
+    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to guide Pac-Man. He is properly constrained by the maze walls!")
     
     pacman_html = """<!DOCTYPE html>
 <html>
@@ -579,7 +579,7 @@ elif active_page == "🟡 Pac-Man":
 <body tabindex="0" id="pacBody">
   <div id="pacContainer">
     <div class="score-board">SCORE: <span id="pScore">0</span></div>
-    <canvas id="pacCanvas" width="384" height="416"></canvas>
+    <canvas id="pacCanvas" width="384" height="384"></canvas>
     <div class="instructions">👉 <b>Click here to focus!</b> | <b>Arrow Keys</b>: Move Pac-Man</div>
   </div>
 
@@ -591,37 +591,25 @@ elif active_page == "🟡 Pac-Man":
     const canvas = document.getElementById("pacCanvas");
     const ctx = canvas.getContext("2d");
 
-    const tileSize = 16;
+    const tileSize = 24;
     let score = 0;
 
-    // Classic 1-tile wide layout mockup (1 = Wall, 0 = Dot, 2 = Empty)
     const map = [
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1],
-      [1,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,1,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,1,0,1,1,0,1],
-      [1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,1],
-      [1,1,1,1,0,1,1,1,1,2,1,0,0,1,2,1,1,1,1,0,1,1,1,1],
-      [2,2,2,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,1,2,2,2],
-      [1,1,1,1,0,1,2,1,1,1,2,2,2,2,1,1,1,2,1,0,1,1,1,1],
-      [2,2,2,2,0,2,2,1,2,2,2,2,2,2,2,2,1,2,2,0,2,2,2,2],
-      [1,1,1,1,0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0,1,1,1,1],
-      [2,2,2,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,1,2,2,2],
-      [1,1,1,1,0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0,1,1,1,1],
-      [1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1],
-      [1,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1],
-      [1,0,0,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,0,0,1],
-      [1,1,0,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,1,0,1,0,1,1],
-      [1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,1],
-      [1,0,1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,1,1,1,1,1,0,1],
-      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,1,1,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,1],
+      [1,0,1,1,0,1,0,0,0,0,1,0,1,1,0,1],
+      [1,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1],
+      [1,1,1,0,1,0,0,0,0,0,0,1,0,1,1,1],
+      [2,2,1,0,1,1,1,2,2,1,1,1,0,1,2,2],
+      [1,1,1,0,0,0,0,2,2,0,0,0,0,1,1,1],
+      [1,0,0,0,1,1,0,2,2,0,1,1,0,0,0,1],
+      [1,0,1,1,1,0,0,2,2,0,0,1,1,1,0,1],
+      [1,0,0,0,0,0,1,1,1,1,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
     ];
 
-    let pacman = { x: 11.5 * tileSize, y: 16 * tileSize, speed: 2, dir: 0, nextDir: 0 };
-    let ghost = { x: 11.5 * tileSize, y: 9 * tileSize, speed: 1.5, color: '#ff0000', dx: 0, dy: -1.5 };
+    let pacman = { x: 7 * tileSize, y: 4 * tileSize, speed: 2, dir: 0, nextDir: 0 };
 
     window.addEventListener("keydown", e => {
       if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) {
@@ -641,50 +629,49 @@ elif active_page == "🟡 Pac-Man":
       return {dx: 0, dy: 0};
     }
 
-    function isWall(x, y) {
-      let r = Math.floor(y / tileSize);
-      let c = Math.floor(x / tileSize);
-      if (r < 0 || r >= map.length || c < 0 || c >= map[0].length) return true;
-      return map[r][c] === 1;
+    function checkCollision(x, y) {
+      const buffer = 4;
+      let points = [
+        {x: x + buffer, y: y + buffer},
+        {x: x + tileSize - buffer, y: y + buffer},
+        {x: x + buffer, y: y + tileSize - buffer},
+        {x: x + tileSize - buffer, y: y + tileSize - buffer}
+      ];
+
+      for (let p of points) {
+        let r = Math.floor(p.y / tileSize);
+        let c = Math.floor(p.x / tileSize);
+        if (r < 0 || r >= map.length || c < 0 || c >= map[0].length) return true;
+        if (map[r][c] === 1) return true;
+      }
+      return false;
     }
 
     function update() {
-      // Try next direction
-      let nextV = getVelocity(pacman.nextDir);
-      let testX = pacman.x + nextV.dx;
-      let testY = pacman.y + nextV.dy;
-      
-      // Check collision for center alignment
-      if (pacman.nextDir !== 0 && !isWall(testX + tileSize/2 - 8, testY + tileSize/2 - 8)) {
-        pacman.dir = pacman.nextDir;
+      if (pacman.nextDir !== 0 && pacman.x % tileSize === 0 && pacman.y % tileSize === 0) {
+        let nextV = getVelocity(pacman.nextDir);
+        if (!checkCollision(pacman.x + nextV.dx, pacman.y + nextV.dy)) {
+          pacman.dir = pacman.nextDir;
+        }
       }
 
       let v = getVelocity(pacman.dir);
-      let curX = pacman.x + v.dx;
-      let curY = pacman.y + v.dy;
+      let nextX = pacman.x + v.dx;
+      let nextY = pacman.y + v.dy;
 
-      if (!isWall(curX + tileSize/2 - 8, curY + tileSize/2 - 8)) {
-        pacman.x = curX;
-        pacman.y = curY;
+      if (!checkCollision(nextX, nextY)) {
+        pacman.x = nextX;
+        pacman.y = nextY;
+      } else {
+        pacman.dir = 0;
       }
 
-      // Eat dot
-      let row = Math.floor((pacman.y + 8) / tileSize);
-      let col = Math.floor((pacman.x + 8) / tileSize);
+      let row = Math.floor((pacman.y + tileSize/2) / tileSize);
+      let col = Math.floor((pacman.x + tileSize/2) / tileSize);
       if (map[row] && map[row][col] === 0) {
         map[row][col] = 2;
         score += 10;
         document.getElementById("pScore").innerText = score;
-      }
-
-      // Simple ghost movement
-      ghost.x += ghost.dx;
-      ghost.y += ghost.dy;
-      if (isWall(ghost.x + 8, ghost.y + 8)) {
-        ghost.dx = -ghost.dx;
-        ghost.dy = -ghost.dy;
-        ghost.x += ghost.dx * 2;
-        ghost.y += ghost.dy * 2;
       }
     }
 
@@ -692,7 +679,6 @@ elif active_page == "🟡 Pac-Man":
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw map
       for (let r = 0; r < map.length; r++) {
         for (let c = 0; c < map[r].length; c++) {
           if (map[r][c] === 1) {
@@ -701,13 +687,12 @@ elif active_page == "🟡 Pac-Man":
           } else if (map[r][c] === 0) {
             ctx.fillStyle = "#ffb8ae";
             ctx.beginPath();
-            ctx.arc(c * tileSize + 8, r * tileSize + 8, 3, 0, Math.PI * 2);
+            ctx.arc(c * tileSize + tileSize/2, r * tileSize + tileSize/2, 4, 0, Math.PI * 2);
             ctx.fill();
           }
         }
       }
 
-      // Draw Pac-Man
       ctx.fillStyle = "yellow";
       ctx.beginPath();
       let angle = 0.2;
@@ -715,16 +700,8 @@ elif active_page == "🟡 Pac-Man":
       if (pacman.dir === 2) angle = 0.7;
       if (pacman.dir === 3) angle = 1.2;
       if (pacman.dir === 4) angle = 0.2;
-      ctx.arc(pacman.x + 8, pacman.y + 8, 10, angle * Math.PI, (angle + 1.6) * Math.PI);
-      ctx.lineTo(pacman.x + 8, pacman.y + 8);
-      ctx.fill();
-
-      // Draw Ghost
-      ctx.fillStyle = ghost.color;
-      ctx.beginPath();
-      ctx.arc(ghost.x + 8, ghost.y + 6, 8, Math.PI, 0, false);
-      ctx.lineTo(ghost.x + 16, ghost.y + 16);
-      ctx.lineTo(ghost.x, ghost.y + 16);
+      ctx.arc(pacman.x + tileSize/2, pacman.y + tileSize/2, tileSize/2 - 2, angle * Math.PI, (angle + 1.6) * Math.PI);
+      ctx.lineTo(pacman.x + tileSize/2, pacman.y + tileSize/2);
       ctx.fill();
     }
 
@@ -739,7 +716,7 @@ elif active_page == "🟡 Pac-Man":
 </body>
 </html>
 """
-    components.html(pacman_html, height=480)
+    components.html(pacman_html, height=520)
 
 elif active_page == "💡 Feature Requests":
     st.subheader("💡 Portal Feature Requests")
@@ -866,6 +843,7 @@ elif active_page == "👑 Admin Controls":
     st.subheader("👑 Admin Controls (Calvin & Cal Only)")
     st.write("Manage portal access and user status.")
     
+    # Exclude both calvin and cal from the target management list
     target_user = st.selectbox("Select Member:", [u for u in ALLOWED_USERS if u not in ["calvin", "cal"]])
     if target_user in st.session_state["banned_users"]:
         st.warning(f"Status for **{target_user}**: Banned 🚫")
