@@ -563,7 +563,7 @@ elif active_page == "🚀 Asteroid Dodge":
 
 elif active_page == "🟡 Pac-Man":
     st.subheader("🟡 Arcade Pac-Man (4 Ghosts)")
-    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to chomp dots and avoid all 4 ghosts (**Blinky**, **Pinky**, **Inky**, and **Clyde**)!")
+    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to chomp dots and avoid all 4 ghosts!")
     
     pacman_html = """<!DOCTYPE html>
 <html>
@@ -596,7 +596,6 @@ elif active_page == "🟡 Pac-Man":
     let lives = 3;
     let gameOver = false;
 
-    // Authentic Classic Arcade Layout Mockup (1 = Wall, 0 = Dot, 2 = Path/House)
     const originalMap = [
       [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
       [1,0,0,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1],
@@ -625,7 +624,6 @@ elif active_page == "🟡 Pac-Man":
 
     let pacman = { x: 13 * tileSize, y: 16 * tileSize, speed: 2, dir: 0, nextDir: 0 };
     
-    // 4 Ghosts: Blinky (Red), Pinky (Pink), Inky (Cyan), Clyde (Orange)
     let ghosts = [
       { x: 13 * tileSize, y: 8 * tileSize, speed: 1.5, color: '#ff0000', dx: 0, dy: -1.5 },
       { x: 12 * tileSize, y: 10 * tileSize, speed: 1.5, color: '#ffb8ff', dx: 1.5, dy: 0 },
@@ -670,7 +668,7 @@ elif active_page == "🟡 Pac-Man":
     function update() {
       if (gameOver) return;
 
-      // Pac-Man movement
+      // 1. Try to take queued turn if aligned on grid
       if (pacman.nextDir !== 0 && pacman.x % tileSize === 0 && pacman.y % tileSize === 0) {
         let nextV = getVelocity(pacman.nextDir);
         if (!checkWall(pacman.x + nextV.dx, pacman.y + nextV.dy)) {
@@ -678,11 +676,11 @@ elif active_page == "🟡 Pac-Man":
         }
       }
 
+      // 2. Move in current direction if path is open
       let v = getVelocity(pacman.dir);
       let nx = pacman.x + v.dx;
       let ny = pacman.y + v.dy;
 
-      // Screen wrap tunnel
       if (nx < -tileSize/2) nx = map[0].length * tileSize - tileSize/2;
       if (nx > map[0].length * tileSize - tileSize/2) nx = -tileSize/2;
 
@@ -690,7 +688,7 @@ elif active_page == "🟡 Pac-Man":
         pacman.x = nx;
         pacman.y = ny;
       } else {
-        pacman.dir = 0;
+        // DO NOT set pacman.dir = 0 here, so he keeps moving or pauses smoothly without locking up forever
       }
 
       // Eat dots
@@ -702,7 +700,7 @@ elif active_page == "🟡 Pac-Man":
         document.getElementById("pScore").innerText = score;
       }
 
-      // Ghost movement & collision
+      // Ghosts movement & collision
       ghosts.forEach(g => {
         g.x += g.dx;
         g.y += g.dy;
@@ -713,7 +711,6 @@ elif active_page == "🟡 Pac-Man":
           g.y += g.dy * 2;
         }
 
-        // Check collision with Pac-Man
         let dist = Math.hypot((pacman.x + tileSize/2) - (g.x + tileSize/2), (pacman.y + tileSize/2) - (g.y + tileSize/2));
         if (dist < tileSize * 0.75) {
           lives--;
@@ -734,7 +731,6 @@ elif active_page == "🟡 Pac-Man":
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw map
       for (let r = 0; r < map.length; r++) {
         for (let c = 0; c < map[r].length; c++) {
           if (map[r][c] === 1) {
@@ -749,7 +745,6 @@ elif active_page == "🟡 Pac-Man":
         }
       }
 
-      // Draw Pac-Man
       ctx.fillStyle = "yellow";
       ctx.beginPath();
       let angle = 0.2;
@@ -761,7 +756,6 @@ elif active_page == "🟡 Pac-Man":
       ctx.lineTo(pacman.x + tileSize/2, pacman.y + tileSize/2);
       ctx.fill();
 
-      // Draw Ghosts
       ghosts.forEach(g => {
         ctx.fillStyle = g.color;
         ctx.beginPath();
