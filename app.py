@@ -31,7 +31,7 @@ div[class*="st-key-secret_tetris_btn"] button:hover {
 }
 </style>""")
 
-# Allowed Users (Added 'cal' alongside 'calvin')
+# Allowed Users
 ALLOWED_USERS = ["pranav", "calvin", "cal", "austin", "isaac", "george", "isaiah", "fox"]
 
 # Initialize Base Session State
@@ -110,11 +110,9 @@ pages_list = [
     "📅 Gang Calendar"
 ]
 
-# Grant Admin Controls to both Calvin and Cal
 if st.session_state["nickname"].strip().lower() in ["calvin", "cal"]:
     pages_list.append("👑 Admin Controls")
 
-# Ensure active page is valid
 if st.session_state["active_page"] not in pages_list:
     st.session_state["active_page"] = pages_list[0]
 
@@ -149,7 +147,6 @@ with col_title:
 
 st.markdown("---")
 
-# Initialize Calendar Events in Session State if missing
 if "calendar_events" not in st.session_state:
     st.session_state["calendar_events"] = []
 
@@ -565,37 +562,184 @@ elif active_page == "🚀 Asteroid Dodge":
     components.html(asteroid_html, height=300)
 
 elif active_page == "🟡 Pac-Man":
-    st.subheader("🟡 Pac-Man Arcade")
-    pacman_html = """
-    <div tabindex="0" id="pacRoot" style="background: #000; color: yellow; padding: 20px; text-align: center; border: 2px solid yellow; border-radius: 8px; font-family: monospace; outline: none; cursor: pointer;">
-        <h3>🟡 Retro Pac-Man Arena (Click to Play)</h3>
-        <canvas id="pacCanvas" width="300" height="150" style="background:#050515; border: 1px solid #333;"></canvas>
-        <p>Chomp the dots! Use arrow keys to navigate.</p>
-        <script>
-            const pRoot = document.getElementById("pacRoot");
-            pRoot.focus();
-            pRoot.addEventListener("click", () => pRoot.focus());
+    st.subheader("🟡 Classic Pac-Man Arcade")
+    st.write("Click inside the arcade frame to focus, then use the **Arrow Keys** to guide Pac-Man through the maze, eat dots, and avoid the ghost!")
+    
+    pacman_html = """<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { background-color: #000; color: #fff; font-family: 'Courier New', Courier, monospace; text-align: center; margin: 0; padding: 10px; outline: none; }
+    #pacContainer { display: inline-block; background: #000; border: 3px solid yellow; border-radius: 8px; padding: 10px; box-shadow: 0 0 15px rgba(255, 255, 0, 0.4); cursor: pointer; outline: none; }
+    #pacCanvas { background-color: #000; display: block; margin: 0 auto; }
+    .score-board { font-size: 16px; font-weight: bold; color: yellow; margin-bottom: 8px; }
+    .instructions { font-size: 12px; color: #8b949e; margin-top: 8px; font-family: sans-serif; }
+  </style>
+</head>
+<body tabindex="0" id="pacBody">
+  <div id="pacContainer">
+    <div class="score-board">SCORE: <span id="pScore">0</span></div>
+    <canvas id="pacCanvas" width="384" height="416"></canvas>
+    <div class="instructions">👉 <b>Click here to focus!</b> | <b>Arrow Keys</b>: Move Pac-Man</div>
+  </div>
 
-            const pCanvas = document.getElementById("pacCanvas");
-            const pCtx = pCanvas.getContext("2d");
-            let px = 50, py = 75, dx = 2;
-            function pLoop() {
-                pCtx.fillStyle = "#050515";
-                pCtx.fillRect(0,0,300,150);
-                pCtx.fillStyle = "yellow";
-                pCtx.beginPath();
-                pCtx.arc(px, py, 15, 0.2 * Math.PI, 1.8 * Math.PI);
-                pCtx.lineTo(px, py);
-                pCtx.fill();
-                px += dx;
-                if(px > 280 || px < 20) dx = -dx;
-                requestAnimationFrame(pLoop);
-            }
-            pLoop();
-        </script>
-    </div>
-    """
-    components.html(pacman_html, height=280)
+  <script>
+    const pBody = document.getElementById("pacBody");
+    pBody.focus();
+    pBody.addEventListener("click", () => pBody.focus());
+
+    const canvas = document.getElementById("pacCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const tileSize = 16;
+    let score = 0;
+
+    // Classic 1-tile wide layout mockup (1 = Wall, 0 = Dot, 2 = Empty)
+    const map = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1],
+      [1,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,1,0,1,1,0,1],
+      [1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,1],
+      [1,1,1,1,0,1,1,1,1,2,1,0,0,1,2,1,1,1,1,0,1,1,1,1],
+      [2,2,2,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,1,2,2,2],
+      [1,1,1,1,0,1,2,1,1,1,2,2,2,2,1,1,1,2,1,0,1,1,1,1],
+      [2,2,2,2,0,2,2,1,2,2,2,2,2,2,2,2,1,2,2,0,2,2,2,2],
+      [1,1,1,1,0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0,1,1,1,1],
+      [2,2,2,1,0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0,1,2,2,2],
+      [1,1,1,1,0,1,2,1,1,1,1,1,1,1,1,1,1,2,1,0,1,1,1,1],
+      [1,0,0,0,0,0,0,0,0,0,0,1,1,0,0,0,0,0,0,0,0,0,0,1],
+      [1,0,1,1,0,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1,1,0,1],
+      [1,0,0,1,0,0,0,0,0,0,0,2,2,0,0,0,0,0,0,0,1,0,0,1],
+      [1,1,0,1,0,1,0,1,1,1,1,0,0,1,1,1,1,0,1,0,1,0,1,1],
+      [1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,1],
+      [1,0,1,1,1,1,1,1,0,1,1,0,0,1,1,0,1,1,1,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    let pacman = { x: 11.5 * tileSize, y: 16 * tileSize, speed: 2, dir: 0, nextDir: 0 };
+    let ghost = { x: 11.5 * tileSize, y: 9 * tileSize, speed: 1.5, color: '#ff0000', dx: 0, dy: -1.5 };
+
+    window.addEventListener("keydown", e => {
+      if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)) {
+        e.preventDefault();
+      }
+      if (e.key === "ArrowUp") pacman.nextDir = 1;
+      if (e.key === "ArrowDown") pacman.nextDir = 2;
+      if (e.key === "ArrowLeft") pacman.nextDir = 3;
+      if (e.key === "ArrowRight") pacman.nextDir = 4;
+    });
+
+    function getVelocity(dir) {
+      if (dir === 1) return {dx: 0, dy: -pacman.speed};
+      if (dir === 2) return {dx: 0, dy: pacman.speed};
+      if (dir === 3) return {dx: -pacman.speed, dy: 0};
+      if (dir === 4) return {dx: pacman.speed, dy: 0};
+      return {dx: 0, dy: 0};
+    }
+
+    function isWall(x, y) {
+      let r = Math.floor(y / tileSize);
+      let c = Math.floor(x / tileSize);
+      if (r < 0 || r >= map.length || c < 0 || c >= map[0].length) return true;
+      return map[r][c] === 1;
+    }
+
+    function update() {
+      // Try next direction
+      let nextV = getVelocity(pacman.nextDir);
+      let testX = pacman.x + nextV.dx;
+      let testY = pacman.y + nextV.dy;
+      
+      // Check collision for center alignment
+      if (pacman.nextDir !== 0 && !isWall(testX + tileSize/2 - 8, testY + tileSize/2 - 8)) {
+        pacman.dir = pacman.nextDir;
+      }
+
+      let v = getVelocity(pacman.dir);
+      let curX = pacman.x + v.dx;
+      let curY = pacman.y + v.dy;
+
+      if (!isWall(curX + tileSize/2 - 8, curY + tileSize/2 - 8)) {
+        pacman.x = curX;
+        pacman.y = curY;
+      }
+
+      // Eat dot
+      let row = Math.floor((pacman.y + 8) / tileSize);
+      let col = Math.floor((pacman.x + 8) / tileSize);
+      if (map[row] && map[row][col] === 0) {
+        map[row][col] = 2;
+        score += 10;
+        document.getElementById("pScore").innerText = score;
+      }
+
+      // Simple ghost movement
+      ghost.x += ghost.dx;
+      ghost.y += ghost.dy;
+      if (isWall(ghost.x + 8, ghost.y + 8)) {
+        ghost.dx = -ghost.dx;
+        ghost.dy = -ghost.dy;
+        ghost.x += ghost.dx * 2;
+        ghost.y += ghost.dy * 2;
+      }
+    }
+
+    function draw() {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw map
+      for (let r = 0; r < map.length; r++) {
+        for (let c = 0; c < map[r].length; c++) {
+          if (map[r][c] === 1) {
+            ctx.fillStyle = "#1919a6";
+            ctx.fillRect(c * tileSize, r * tileSize, tileSize, tileSize);
+          } else if (map[r][c] === 0) {
+            ctx.fillStyle = "#ffb8ae";
+            ctx.beginPath();
+            ctx.arc(c * tileSize + 8, r * tileSize + 8, 3, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
+
+      // Draw Pac-Man
+      ctx.fillStyle = "yellow";
+      ctx.beginPath();
+      let angle = 0.2;
+      if (pacman.dir === 1) angle = 1.7;
+      if (pacman.dir === 2) angle = 0.7;
+      if (pacman.dir === 3) angle = 1.2;
+      if (pacman.dir === 4) angle = 0.2;
+      ctx.arc(pacman.x + 8, pacman.y + 8, 10, angle * Math.PI, (angle + 1.6) * Math.PI);
+      ctx.lineTo(pacman.x + 8, pacman.y + 8);
+      ctx.fill();
+
+      // Draw Ghost
+      ctx.fillStyle = ghost.color;
+      ctx.beginPath();
+      ctx.arc(ghost.x + 8, ghost.y + 6, 8, Math.PI, 0, false);
+      ctx.lineTo(ghost.x + 16, ghost.y + 16);
+      ctx.lineTo(ghost.x, ghost.y + 16);
+      ctx.fill();
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
+</body>
+</html>
+"""
+    components.html(pacman_html, height=480)
 
 elif active_page == "💡 Feature Requests":
     st.subheader("💡 Portal Feature Requests")
